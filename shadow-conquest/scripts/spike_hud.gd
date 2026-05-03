@@ -3,6 +3,7 @@ class_name SpikeHud
 
 signal next_wave_requested
 signal restart_requested
+signal scenario_selected(scenario_id: String)
 
 var _game_state_adapter: Node = null
 var _wave_state_adapter: Node = null
@@ -14,6 +15,9 @@ var _wave_value_label: Label = null
 var _lives_value_label: Label = null
 var _breaches_value_label: Label = null
 var _enemies_value_label: Label = null
+var _scenario_entries: Array = []
+var _active_scenario_id := ""
+var _scenario_select: OptionButton = null
 var _action_button: Button = null
 var _cached_text := ""
 
@@ -38,6 +42,19 @@ func bind_adapters(game_state_adapter: Node, wave_state_adapter: Node, combat_ad
 	_combat_adapter = combat_adapter
 	_wave_count = maxi(wave_count, 0)
 	refresh()
+
+func bind_scenarios(entries: Array, active_scenario_id: String) -> void:
+	_scenario_entries = []
+	for entry_variant: Variant in entries:
+		if typeof(entry_variant) == TYPE_DICTIONARY:
+			_scenario_entries.append((entry_variant as Dictionary).duplicate(true))
+	_active_scenario_id = active_scenario_id
+	_ensure_nodes()
+	_rebuild_scenario_select()
+	_layout_hud_bar()
+
+func active_scenario_id() -> String:
+	return _active_scenario_id
 
 func refresh() -> void:
 	_ensure_nodes()
@@ -70,6 +87,7 @@ func _ensure_nodes() -> void:
 	_lives_value_label = _ensure_value_label(_lives_value_label, "LivesValue")
 	_breaches_value_label = _ensure_value_label(_breaches_value_label, "BreachesValue")
 	_enemies_value_label = _ensure_value_label(_enemies_value_label, "EnemiesValue")
+	_ensure_scenario_select()
 	_ensure_action_button()
 	_layout_hud_bar()
 
@@ -102,6 +120,42 @@ func _ensure_value_label(label: Label, label_name: String) -> Label:
 		_hud_bar.add_child(caption)
 
 	return label
+
+func _ensure_scenario_select() -> void:
+	if _scenario_select == null:
+		_scenario_select = _hud_bar.get_node_or_null("ScenarioSelect") as OptionButton
+	if _scenario_select == null:
+		_scenario_select = OptionButton.new()
+		_scenario_select.name = "ScenarioSelect"
+		_scenario_select.mouse_filter = Control.MOUSE_FILTER_STOP
+		_scenario_select.focus_mode = Control.FOCUS_NONE
+		_scenario_select.add_theme_font_size_override("font_size", 13)
+		_hud_bar.add_child(_scenario_select)
+
+	var callback := Callable(self, "_on_scenario_select_item_selected")
+	if not _scenario_select.is_connected("item_selected", callback):
+		_scenario_select.connect("item_selected", callback)
+	_rebuild_scenario_select()
+
+func _rebuild_scenario_select() -> void:
+	if _scenario_select == null:
+		return
+
+	_scenario_select.clear()
+	var selected_index := 0
+	for index in range(_scenario_entries.size()):
+		var entry := _scenario_entries[index] as Dictionary
+		var scenario_id := str(entry.get("id", ""))
+		var scenario_name := str(entry.get("name", scenario_id))
+		_scenario_select.add_item(scenario_name, index)
+		_scenario_select.set_item_metadata(index, scenario_id)
+		if scenario_id == _active_scenario_id:
+			selected_index = index
+	if _scenario_entries.is_empty():
+		_scenario_select.visible = false
+	else:
+		_scenario_select.visible = true
+		_scenario_select.select(selected_index)
 
 func _ensure_action_button() -> void:
 	if _action_button == null:
@@ -142,9 +196,15 @@ func _layout_hud_bar_for_width(viewport_width: float) -> void:
 	offset_bottom = offset_top + _hud_bar.offset_bottom
 	var gap := 8.0
 	var padding := 10.0
+	var selector_width := 170.0
 	var action_width := 120.0
-	var cell_width := (bar_width - padding * 2.0 - gap * 5.0 - action_width) / 5.0
+	var cell_width := maxf((bar_width - padding * 2.0 - gap * 6.0 - selector_width - action_width) / 5.0, 72.0)
 	var x := padding
+	if _scenario_select != null:
+		_scenario_select.visible = not _scenario_entries.is_empty()
+		_scenario_select.position = Vector2(x, 17.0)
+		_scenario_select.size = Vector2(selector_width, 30.0)
+	x += selector_width + gap
 	for label_name in ["State", "Wave", "Lives", "Breaches", "Enemies"]:
 		_layout_field(label_name, x, cell_width, 8.0, 25.0, 28.0)
 		x += cell_width + gap
@@ -159,6 +219,11 @@ func _layout_mobile_hud_bar(bar_width: float) -> void:
 	var row_one_cell_width := (bar_width - padding * 2.0 - gap) / 2.0
 	var action_width := 100.0
 	var row_two_cell_width := (bar_width - padding * 2.0 - gap * 3.0 - action_width) / 3.0
+
+	if _scenario_select != null:
+		_scenario_select.visible = false
+		_scenario_select.position = Vector2(padding, 58.0)
+		_scenario_select.size = Vector2(112.0, 26.0)
 
 	_layout_field("State", padding, row_one_cell_width, 6.0, 21.0, 24.0)
 	_layout_field("Wave", padding + row_one_cell_width + gap, row_one_cell_width, 6.0, 21.0, 24.0)
@@ -253,3 +318,13 @@ func _on_action_button_pressed() -> void:
 		next_wave_requested.emit()
 	elif state == "basic_win" or state == "basic_loss":
 		restart_requested.emit()
+
+func _on_scenario_select_item_selected(index: int) -> void:
+	if _scenario_select == null or index < 0 or index >= _scenario_select.item_count:
+		return
+	var metadata: Variant = _scenario_select.get_item_metadata(index)
+	var scenario_id := str(metadata)
+	if scenario_id == "" or scenario_id == _active_scenario_id:
+		return
+	_active_scenario_id = scenario_id
+	scenario_selected.emit(scenario_id)

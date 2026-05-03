@@ -62,6 +62,7 @@ func load_scenario_by_id(scenario_id: String) -> bool:
 	_cache_path()
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
+	hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
 	hud.call("refresh")
 	return true
 
@@ -75,6 +76,7 @@ func _ready() -> void:
 		wave_state_adapter.connect("wave_cleared", wave_clear_callback)
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
+	hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
 	_bind_hud_action_signals()
 
 func _configure_scenario_catalog() -> void:
@@ -332,6 +334,7 @@ func restart_current_scenario_manually() -> bool:
 
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
+	hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
 	return true
 
 func _bind_hud_action_signals() -> void:
@@ -343,12 +346,21 @@ func _bind_hud_action_signals() -> void:
 	if hud.has_signal("restart_requested") and not hud.is_connected("restart_requested", restart_callback):
 		hud.connect("restart_requested", restart_callback)
 
+	var scenario_callback := Callable(self, "_on_hud_scenario_selected")
+	if hud.has_signal("scenario_selected") and not hud.is_connected("scenario_selected", scenario_callback):
+		hud.connect("scenario_selected", scenario_callback)
+
 func _on_hud_next_wave_requested() -> void:
 	if start_next_wave_manually():
 		hud.call("refresh")
 
 func _on_hud_restart_requested() -> void:
 	if restart_current_scenario_manually():
+		hud.call("refresh")
+
+func _on_hud_scenario_selected(scenario_id: String) -> void:
+	if load_scenario_by_id(scenario_id):
+		hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
 		hud.call("refresh")
 
 func _start_active_wave_state(active_wave_id: String, waves: Array) -> void:

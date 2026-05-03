@@ -15,6 +15,7 @@ func _init() -> void:
 	_validate_main_hud_boundary(failures)
 	_validate_main_hud_state_readout(failures)
 	_validate_main_hud_action_wiring(failures)
+	_validate_hud_scenario_selector(failures)
 	_validate_mobile_hud_layout(failures)
 	_validate_mobile_capture_orientation(failures)
 	_validate_terminal_action_capture_contract(failures)
@@ -42,10 +43,10 @@ func _validate_main_hud_boundary(failures: Array[String]) -> void:
 	elif hud.get_script() == null:
 		failures.append("Main HUD must have a valid script")
 	else:
-		for method_name in ["bind_adapters", "refresh", "debug_text"]:
+		for method_name in ["bind_adapters", "bind_scenarios", "refresh", "debug_text", "active_scenario_id"]:
 			if not hud.has_method(method_name):
 				failures.append("Spike HUD must expose %s()" % method_name)
-		for signal_name in ["next_wave_requested", "restart_requested"]:
+		for signal_name in ["next_wave_requested", "restart_requested", "scenario_selected"]:
 			if not hud.has_signal(signal_name):
 				failures.append("Spike HUD must expose %s signal" % signal_name)
 	main.free()
@@ -190,6 +191,56 @@ func _validate_main_hud_action_wiring(failures: Array[String]) -> void:
 		failures.append("HUD Restart action must rebuild first-wave tracked enemy")
 
 	main.free()
+
+func _validate_hud_scenario_selector(failures: Array[String]) -> void:
+	var hud_script := load(HUD_SCRIPT_PATH) as Script
+	if hud_script == null:
+		return
+
+	var hud := Control.new()
+	hud.set_script(hud_script)
+	get_root().add_child(hud)
+	hud.call("_ready")
+	var entries: Array = [
+		{
+			"id": "fixture-map-1",
+			"name": "Fixture Map One",
+			"path": "res://tests/fixtures/two_wave_scenario.json",
+			"summary": ""
+		},
+		{
+			"id": "fixture-map-2",
+			"name": "Fixture Map Two",
+			"path": "res://tests/fixtures/alternate_scenario.json",
+			"summary": ""
+		}
+	]
+	hud.call("bind_scenarios", entries, "fixture-map-1")
+	var selector := hud.get_node_or_null("HudBar/ScenarioSelect") as OptionButton
+	if selector == null:
+		failures.append("HUD must create ScenarioSelect OptionButton")
+	else:
+		if selector.item_count != 2:
+			failures.append("HUD ScenarioSelect must show two scenario options")
+		if selector.get_item_text(0) != "Fixture Map One":
+			failures.append("HUD ScenarioSelect must use scenario display names")
+		if selector.get_item_text(1) != "Fixture Map Two":
+			failures.append("HUD ScenarioSelect must use the second scenario display name")
+		if str(hud.call("active_scenario_id")) != "fixture-map-1":
+			failures.append("HUD must track active scenario id")
+		var selected_ids: Array[String] = []
+		hud.connect("scenario_selected", func(scenario_id: String) -> void:
+			selected_ids.append(scenario_id)
+		)
+		selector.select(1)
+		selector.emit_signal("item_selected", 1)
+		if selected_ids.size() != 1 or selected_ids[0] != "fixture-map-2":
+			failures.append("HUD ScenarioSelect must emit selected scenario id")
+		hud.call("_layout_hud_bar_for_width", 390.0)
+		if selector.visible:
+			failures.append("HUD ScenarioSelect must stay hidden in narrow HUD layout")
+
+	hud.free()
 
 func _validate_mobile_hud_layout(failures: Array[String]) -> void:
 	var hud_script := load(HUD_SCRIPT_PATH) as Script
