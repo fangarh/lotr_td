@@ -14,6 +14,7 @@ yarn-error.log*
 hs_err_pid*.log
 replay_pid*.log
 node-server.*.log
+mono_crash.*.json
 
 # Root-level generated visual verification captures
 /td-*.png
@@ -24,6 +25,14 @@ node-server.*.log
 /*.glb
 
 # Godot local/editor generated state
+.godot/
+.nomedia
+.import/
+export.cfg
+export_credentials.cfg
+*.translation
+.mono/
+data_*/
 shadow-conquest/.godot/
 shadow-conquest/builds/*
 !shadow-conquest/builds/.gdignore
