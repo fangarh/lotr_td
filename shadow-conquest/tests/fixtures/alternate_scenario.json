@@ -1,0 +1,60 @@
+{
+  "id": "fixture-map-2",
+  "name": "Fixture Map Two",
+  "board": {
+    "width": 5,
+    "height": 4,
+    "tileSize": 1.0
+  },
+  "gameState": {
+    "baseLives": 3
+  },
+  "path": {
+    "id": "fixture-road-two",
+    "points": [
+      { "x": 0, "z": 2 },
+      { "x": 1, "z": 2 },
+      { "x": 2, "z": 2 },
+      { "x": 3, "z": 1 },
+      { "x": 4, "z": 1 }
+    ]
+  },
+  "towers": {
+    "catalog": [],
+    "placements": []
+  },
+  "obstacles": {
+    "catalog": [],
+    "placements": []
+  },
+  "terrainProps": {
+    "catalog": [],
+    "placements": []
+  },
+  "enemies": {
+    "catalog": [
+      {
+        "id": "test-soldier",
+        "name": "Test Soldier",
+        "faction": "free-peoples",
+        "health": 10,
+        "speed": 0.0,
+        "reward": 1,
+        "damage": 1
+      }
+    ]
+  },
+  "waves": [
+    {
+      "id": "alternate-wave-1",
+      "spawns": [
+        {
+          "enemyId": "test-soldier",
+          "count": 1,
+          "delay": 0.0,
+          "interval": 1.0
+        }
+      ]
+    }
+  ]
+}

@@ -1,13 +1,13 @@
 {
-  "id": "spike-scenario",
-  "name": "Spike Scenario",
+  "id": "mvp-map-2",
+  "name": "Ithilien Pressure",
   "board": {
-    "width": 8,
+    "width": 10,
     "height": 6,
     "tileSize": 1.0
   },
   "gameState": {
-    "baseLives": 5
+    "baseLives": 6
   },
   "path": {
     "id": "ash-road",
@@ -17,14 +17,16 @@
     "surfaceYawDegrees": 0.0,
     "surfaceLift": 0.015,
     "points": [
-      { "x": 0, "z": 3 },
-      { "x": 1, "z": 3 },
+      { "x": 0, "z": 4 },
+      { "x": 1, "z": 4 },
       { "x": 2, "z": 3 },
       { "x": 3, "z": 3 },
-      { "x": 4, "z": 2 },
-      { "x": 5, "z": 2 },
-      { "x": 6, "z": 2 },
-      { "x": 7, "z": 2 }
+      { "x": 4, "z": 4 },
+      { "x": 5, "z": 4 },
+      { "x": 6, "z": 3 },
+      { "x": 7, "z": 3 },
+      { "x": 8, "z": 2 },
+      { "x": 9, "z": 2 }
     ]
   },
   "towers": {

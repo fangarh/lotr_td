@@ -1,6 +1,6 @@
 {
-  "id": "spike-scenario",
-  "name": "Spike Scenario",
+  "id": "mvp-map-1",
+  "name": "Black Gate Muster",
   "board": {
     "width": 8,
     "height": 6,

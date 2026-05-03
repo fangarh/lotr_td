@@ -1,0 +1,17 @@
+{
+  "defaultScenarioId": "mvp-map-1",
+  "scenarios": [
+    {
+      "id": "mvp-map-1",
+      "name": "Black Gate Muster",
+      "path": "res://data/scenarios/mvp_map_1.json",
+      "summary": "A short baseline Shadow foothold map."
+    },
+    {
+      "id": "mvp-map-2",
+      "name": "Ithilien Pressure",
+      "path": "res://data/scenarios/mvp_map_2.json",
+      "summary": "A second map with longer pressure and more varied resistance."
+    }
+  ]
+}

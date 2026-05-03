@@ -2,6 +2,9 @@ extends SceneTree
 
 const SCENE_PATH := "res://scenes/main.tscn"
 const DATA_PATH := "res://data/spike_scenario.json"
+const SCENARIO_INDEX_PATH := "res://data/scenario_index.json"
+const MVP_MAP_1_PATH := "res://data/scenarios/mvp_map_1.json"
+const MVP_MAP_2_PATH := "res://data/scenarios/mvp_map_2.json"
 
 func _init() -> void:
 	var failures: Array[String] = []
@@ -16,7 +19,12 @@ func _init() -> void:
 		else:
 			var data := parsed as Dictionary
 			_validate_catalog_shape(data, failures)
+			if str(data.get("id", "")) == "":
+				failures.append("Default spike scenario data must include a scenario id")
+			if str(data.get("name", "")) == "":
+				failures.append("Default spike scenario data must include a scenario name")
 
+	_validate_mvp_scenario_index(failures)
 	if not ResourceLoader.exists(SCENE_PATH):
 		failures.append("Missing main scene at %s" % SCENE_PATH)
 	else:
@@ -117,3 +125,43 @@ func _validate_catalog_shape(data: Dictionary, failures: Array[String]) -> void:
 		var game_state_data := game_state as Dictionary
 		if int(game_state_data.get("baseLives", 0)) < 1:
 			failures.append("Spike scenario gameState.baseLives must be at least 1")
+
+func _validate_mvp_scenario_index(failures: Array[String]) -> void:
+	if not FileAccess.file_exists(SCENARIO_INDEX_PATH):
+		failures.append("Missing MVP scenario index at %s" % SCENARIO_INDEX_PATH)
+		return
+
+	var index_file := FileAccess.open(SCENARIO_INDEX_PATH, FileAccess.READ)
+	var parsed: Variant = JSON.parse_string(index_file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		failures.append("MVP scenario index must be a JSON object")
+		return
+
+	var index := parsed as Dictionary
+	if str(index.get("defaultScenarioId", "")) != "mvp-map-1":
+		failures.append("MVP scenario index must default to mvp-map-1")
+	var scenarios_variant: Variant = index.get("scenarios", [])
+	if typeof(scenarios_variant) != TYPE_ARRAY:
+		failures.append("MVP scenario index scenarios must be an array")
+		return
+
+	var ids: Dictionary = {}
+	for scenario_variant: Variant in scenarios_variant:
+		if typeof(scenario_variant) != TYPE_DICTIONARY:
+			failures.append("MVP scenario index entries must be objects")
+			continue
+		var scenario := scenario_variant as Dictionary
+		var id := str(scenario.get("id", ""))
+		var path := str(scenario.get("path", ""))
+		ids[id] = true
+		if id == "":
+			failures.append("MVP scenario index entry must include id")
+		if str(scenario.get("name", "")) == "":
+			failures.append("MVP scenario index entry %s must include name" % id)
+		if path == "" or not FileAccess.file_exists(path):
+			failures.append("MVP scenario index entry %s must point to an existing file" % id)
+
+	if not ids.has("mvp-map-1"):
+		failures.append("MVP scenario index must include mvp-map-1")
+	if not ids.has("mvp-map-2"):
+		failures.append("MVP scenario index must include mvp-map-2")
