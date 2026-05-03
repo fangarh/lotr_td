@@ -1,0 +1,35 @@
+# Dependencies and package manager output
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local tooling/cache
+.playwright-mcp/
+.superpowers/
+
+# Logs and crash dumps
+*.log
+hs_err_pid*.log
+replay_pid*.log
+node-server.*.log
+
+# Root-level generated visual verification captures
+/td-*.png
+/hud-options-browser.png
+
+# Root-level imported source drops; processed project assets live under shadow-conquest/assets
+/*.zip
+/*.glb
+
+# Godot local/editor generated state
+shadow-conquest/.godot/
+shadow-conquest/builds/*
+!shadow-conquest/builds/.gdignore
+shadow-conquest/hs_err_pid*.log
+shadow-conquest/replay_pid*.log
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.tmp

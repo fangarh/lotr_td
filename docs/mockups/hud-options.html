@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shadow Conquest HUD Options</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #242522;
+      --panel: rgba(18, 14, 11, 0.78);
+      --panel-strong: rgba(12, 10, 8, 0.9);
+      --line: rgba(246, 219, 158, 0.18);
+      --text: #efe4c6;
+      --muted: #b7a986;
+      --ember: #ef3f16;
+      --morgul: #49e28a;
+      --road: #6d5942;
+      --tile-a: #31432f;
+      --tile-b: #293a2a;
+      --ash: #4a4a45;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #3a3934 0, var(--page) 52%, #181916 100%);
+      color: var(--text);
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .page {
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      font-weight: 760;
+    }
+
+    .lead {
+      margin: 0 0 18px;
+      max-width: 980px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(300px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .option {
+      min-width: 0;
+    }
+
+    .option h2 {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .tag {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .frame {
+      position: relative;
+      overflow: hidden;
+      min-height: 420px;
+      border: 1px solid rgba(246, 219, 158, 0.12);
+      border-radius: 8px;
+      background: #3c3d39;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+    }
+
+    .world {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      transform: translateY(24px);
+    }
+
+    .board {
+      position: relative;
+      width: 320px;
+      height: 220px;
+      transform: rotateX(58deg) rotateZ(-45deg);
+      transform-style: preserve-3d;
+    }
+
+    .tile {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      background: var(--tile-a);
+      border: 1px solid rgba(229, 222, 179, 0.08);
+    }
+
+    .tile:nth-child(2n) {
+      background: var(--tile-b);
+    }
+
+    .road {
+      background: var(--road);
+      box-shadow: inset 0 0 0 5px rgba(31, 25, 18, 0.16);
+    }
+
+    .tower,
+    .enemy,
+    .obstacle {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      transform: rotateZ(45deg) rotateX(-58deg);
+      transform-origin: center;
+    }
+
+    .tower {
+      border-radius: 7px;
+      background: linear-gradient(145deg, #15110f, #776947 55%, #1b1712);
+      border: 2px solid rgba(236, 203, 121, 0.38);
+      box-shadow: 0 0 12px rgba(239, 63, 22, 0.45);
+    }
+
+    .tower::after,
+    .enemy::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -8px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      background: var(--ember);
+      box-shadow: 0 0 10px var(--ember);
+    }
+
+    .enemy {
+      border-radius: 50%;
+      background: linear-gradient(145deg, #e9e1cd, #778186);
+      border: 2px solid #2b3438;
+    }
+
+    .enemy::after {
+      top: -12px;
+      width: 28px;
+      height: 4px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #b72217 0 36%, #1f1713 36%);
+      box-shadow: none;
+    }
+
+    .obstacle {
+      border-radius: 50%;
+      background: #111611;
+      border: 2px solid rgba(73, 226, 138, 0.35);
+      box-shadow: inset 0 0 0 2px rgba(73, 226, 138, 0.2);
+    }
+
+    .obstacle::before,
+    .obstacle::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 15px;
+      width: 22px;
+      height: 3px;
+      background: var(--morgul);
+      transform: rotate(35deg);
+      box-shadow: 0 0 8px rgba(73, 226, 138, 0.8);
+    }
+
+    .obstacle::after {
+      transform: rotate(-35deg);
+    }
+
+    .hud-bar,
+    .debug-panel,
+    .full-hud {
+      position: absolute;
+      z-index: 5;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-bar {
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: grid;
+      grid-template-columns: 1.35fr repeat(4, 1fr);
+      gap: 8px;
+      min-height: 58px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .cell {
+      min-width: 0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(246, 219, 158, 0.08);
+    }
+
+    .label {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .value {
+      display: block;
+      margin-top: 4px;
+      font-size: 15px;
+      font-weight: 760;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .debug-panel {
+      top: 14px;
+      left: 14px;
+      width: 250px;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: Consolas, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+
+    .full-hud {
+      inset: 14px 14px auto;
+      min-height: 132px;
+      padding: 10px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 10px;
+    }
+
+    .full-hud .summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+
+    .action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      border-radius: 6px;
+      border: 1px solid rgba(246, 219, 158, 0.14);
+      background: rgba(239, 63, 22, 0.16);
+      color: #ffe0bd;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .tower-strip {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .tower-button {
+      min-height: 34px;
+      border-radius: 6px;
+      border: 1px solid rgba(246, 219, 158, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      font-size: 12px;
+      display: grid;
+      place-items: center;
+    }
+
+    .notes {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .recommended {
+      color: #ffd9a0;
+    }
+
+    @media (max-width: 1120px) {
+      .options {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 14px;
+      }
+
+      .frame {
+        min-height: 560px;
+      }
+
+      .hud-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .cell:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .full-hud {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Shadow Conquest HUD options</h1>
+    <p class="lead">Три направления для следующего HUD-шагa. Все варианты показаны как overlay над одним и тем же spike-полем; это дизайн-макет, не production Godot UI.</p>
+
+    <section class="options" aria-label="HUD options">
+      <article class="option">
+        <h2>1. Mobile-safe read-only bar <span class="tag recommended">recommended</span></h2>
+        <div class="frame">
+          <div class="world" aria-hidden="true"><div class="board">
+            <div class="tile" style="left:0;top:0"></div><div class="tile" style="left:58px;top:0"></div><div class="tile" style="left:116px;top:0"></div><div class="tile road" style="left:174px;top:0"></div><div class="tile" style="left:232px;top:0"></div>
+            <div class="tile" style="left:0;top:58px"></div><div class="tile road" style="left:58px;top:58px"></div><div class="tile road" style="left:116px;top:58px"></div><div class="tile road" style="left:174px;top:58px"></div><div class="tile" style="left:232px;top:58px"></div>
+            <div class="tile" style="left:0;top:116px"></div><div class="tile" style="left:58px;top:116px"></div><div class="tile" style="left:116px;top:116px"></div><div class="tile road" style="left:174px;top:116px"></div><div class="tile road" style="left:232px;top:116px"></div>
+            <div class="tower" style="left:50px;top:18px"></div><div class="tower" style="left:210px;top:136px"></div><div class="enemy" style="left:170px;top:66px"></div><div class="obstacle" style="left:114px;top:122px"></div>
+          </div></div>
+          <div class="hud-bar">
+            <div class="cell"><span class="label">State</span><span class="value">Running</span></div>
+            <div class="cell"><span class="label">Wave</span><span class="value">1 / 1</span></div>
+            <div class="cell"><span class="label">Lives</span><span class="value">5</span></div>
+            <div class="cell"><span class="label">Breaches</span><span class="value">0</span></div>
+            <div class="cell"><span class="label">Enemies</span><span class="value">3</span></div>
+          </div>
+        </div>
+        <p class="notes">Узкий read-only foundation: ближе к будущему mobile HUD, но без кнопок и gameplay ownership.</p>
+      </article>
+
+      <article class="option">
+        <h2>2. Debug panel + Next Wave <span class="tag">progression hook</span></h2>
+        <div class="frame">
+          <div class="world" aria-hidden="true"><div class="board">
+            <div class="tile" style="left:0;top:0"></div><div class="tile" style="left:58px;top:0"></div><div class="tile" style="left:116px;top:0"></div><div class="tile road" style="left:174px;top:0"></div><div class="tile" style="left:232px;top:0"></div>
+            <div class="tile" style="left:0;top:58px"></div><div class="tile road" style="left:58px;top:58px"></div><div class="tile road" style="left:116px;top:58px"></div><div class="tile road" style="left:174px;top:58px"></div><div class="tile" style="left:232px;top:58px"></div>
+            <div class="tile" style="left:0;top:116px"></div><div class="tile" style="left:58px;top:116px"></div><div class="tile" style="left:116px;top:116px"></div><div class="tile road" style="left:174px;top:116px"></div><div class="tile road" style="left:232px;top:116px"></div>
+            <div class="tower" style="left:50px;top:18px"></div><div class="tower" style="left:210px;top:136px"></div><div class="enemy" style="left:170px;top:66px"></div><div class="obstacle" style="left:114px;top:122px"></div>
+          </div></div>
+          <div class="debug-panel">State: wave_clear
+Wave: wave-1 (1/2)
+Lives: 4
+Breaches: 1
+Active enemies: 0
+
+[ Next wave ]</div>
+        </div>
+        <p class="notes">Быстро даёт touch-кнопку, но сразу связывает HUD с progression. Лучше после read-only layout.</p>
+      </article>
+
+      <article class="option">
+        <h2>3. Full production HUD shell <span class="tag">too early</span></h2>
+        <div class="frame">
+          <div class="world" aria-hidden="true"><div class="board">
+            <div class="tile" style="left:0;top:0"></div><div class="tile" style="left:58px;top:0"></div><div class="tile" style="left:116px;top:0"></div><div class="tile road" style="left:174px;top:0"></div><div class="tile" style="left:232px;top:0"></div>
+            <div class="tile" style="left:0;top:58px"></div><div class="tile road" style="left:58px;top:58px"></div><div class="tile road" style="left:116px;top:58px"></div><div class="tile road" style="left:174px;top:58px"></div><div class="tile" style="left:232px;top:58px"></div>
+            <div class="tile" style="left:0;top:116px"></div><div class="tile" style="left:58px;top:116px"></div><div class="tile" style="left:116px;top:116px"></div><div class="tile road" style="left:174px;top:116px"></div><div class="tile road" style="left:232px;top:116px"></div>
+            <div class="tower" style="left:50px;top:18px"></div><div class="tower" style="left:210px;top:136px"></div><div class="enemy" style="left:170px;top:66px"></div><div class="obstacle" style="left:114px;top:122px"></div>
+          </div></div>
+          <div class="full-hud">
+            <div class="summary">
+              <div class="cell"><span class="label">Wave</span><span class="value">1 / 5</span></div>
+              <div class="cell"><span class="label">Lives</span><span class="value">5</span></div>
+              <div class="cell"><span class="label">Gold</span><span class="value">120</span></div>
+              <div class="cell"><span class="label">Power</span><span class="value">Eye ready</span></div>
+            </div>
+            <div class="actions">
+              <div class="action">Pause</div>
+              <div class="action">Speed x2</div>
+              <div class="action">Next wave</div>
+              <div class="action">Restart</div>
+            </div>
+            <div class="tower-strip">
+              <div class="tower-button">Eye</div>
+              <div class="tower-button">Orcs</div>
+              <div class="tower-button">Morgul</div>
+              <div class="tower-button">Forge</div>
+            </div>
+          </div>
+        </div>
+        <p class="notes">Показывает целевую насыщенность, но требует tower placement, pause/speed/restart и resource model. Это отдельный крупный этап.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

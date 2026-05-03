@@ -1,0 +1,268 @@
+{
+  "board": {
+    "width": 8,
+    "height": 6,
+    "tileSize": 1.0
+  },
+  "gameState": {
+    "baseLives": 5
+  },
+  "path": {
+    "id": "ash-road",
+    "surfaceModelPath": "res://assets/models/terrain/ash_road_surface.glb",
+    "surfaceTargetFootprint": 0.92,
+    "surfaceTargetHeight": 0.12,
+    "surfaceYawDegrees": 0.0,
+    "surfaceLift": 0.015,
+    "points": [
+      { "x": 0, "z": 3 },
+      { "x": 1, "z": 3 },
+      { "x": 2, "z": 3 },
+      { "x": 3, "z": 3 },
+      { "x": 4, "z": 2 },
+      { "x": 5, "z": 2 },
+      { "x": 6, "z": 2 },
+      { "x": 7, "z": 2 }
+    ]
+  },
+  "towers": {
+    "catalog": [
+      {
+        "id": "eye-of-sauron",
+        "name": "Eye of Sauron",
+        "role": "magic",
+        "range": 3.0,
+        "damage": 18,
+        "fireRate": 0.8,
+        "modelPath": "res://assets/models/towers/base.glb",
+        "modelYawDegrees": -45.0,
+        "modelLift": 0.02,
+        "targetHeight": 1.35,
+        "targetFootprint": 0.9
+      },
+      {
+        "id": "shadow-tower-b2",
+        "name": "Shadow Tower B2",
+        "role": "visual-proxy",
+        "range": 2.8,
+        "damage": 14,
+        "fireRate": 0.9,
+        "obstacleEffectId": "corrupted-roots",
+        "obstacleSpawnInterval": 1.0,
+        "obstacleSpawnLifetime": 1.4,
+        "obstacleSpawnRange": 2.2,
+        "modelPath": "res://assets/models/towers/shadow_tower_b2.glb",
+        "modelYawDegrees": -45.0,
+        "modelLift": 0.02,
+        "targetHeight": 1.35,
+        "targetFootprint": 0.9
+      },
+      {
+        "id": "shadow-tower-b3",
+        "name": "Shadow Tower B3",
+        "role": "visual-proxy",
+        "range": 3.2,
+        "damage": 16,
+        "fireRate": 0.75,
+        "obstacleEffectId": "orc-blockade",
+        "obstacleSpawnInterval": 1.0,
+        "obstacleSpawnLifetime": 1.2,
+        "obstacleSpawnRange": 2.2,
+        "meshPath": "res://assets/models/towers/shadow_tower_b3_textured/base.obj",
+        "textureDiffusePath": "res://assets/models/towers/shadow_tower_b3_textured/texture_diffuse.png",
+        "textureNormalPath": "res://assets/models/towers/shadow_tower_b3_textured/texture_normal.png",
+        "textureMetallicPath": "res://assets/models/towers/shadow_tower_b3_textured/texture_metallic.png",
+        "textureRoughnessPath": "res://assets/models/towers/shadow_tower_b3_textured/texture_roughness.png",
+        "modelYawDegrees": -45.0,
+        "modelLift": 0.02,
+        "targetHeight": 1.35,
+        "targetFootprint": 0.9
+      },
+      {
+        "id": "shadow-tower-b4",
+        "name": "Shadow Tower B4",
+        "role": "visual-proxy",
+        "range": 3.0,
+        "damage": 15,
+        "fireRate": 0.82,
+        "modelPath": "res://assets/models/towers/shadow_tower_b4.glb",
+        "projectileModelPath": "res://assets/models/projectiles/shadow_tower_b4_shot.glb",
+        "showProjectilePreview": true,
+        "projectilePreviewOffset": { "x": 0.42, "y": 0.82, "z": -0.42 },
+        "projectilePreviewScale": 0.22,
+        "modelYawDegrees": -45.0,
+        "modelLift": 0.02,
+        "targetHeight": 1.35,
+        "targetFootprint": 0.9
+      }
+    ],
+    "placements": [
+      {
+        "typeId": "eye-of-sauron",
+        "x": 3,
+        "z": 1
+      },
+      {
+        "typeId": "shadow-tower-b2",
+        "x": 1,
+        "z": 4
+      },
+      {
+        "typeId": "shadow-tower-b3",
+        "x": 6,
+        "z": 1
+      },
+      {
+        "typeId": "shadow-tower-b4",
+        "x": 0,
+        "z": 1
+      }
+    ]
+  },
+  "obstacles": {
+    "catalog": [
+      {
+        "id": "corrupted-roots",
+        "name": "Corrupted Roots",
+        "role": "future-path-control",
+        "effect": "slow-zone",
+        "slowMultiplier": 0.55,
+        "radius": 0.85
+      },
+      {
+        "id": "orc-blockade",
+        "name": "Orc Blockade",
+        "role": "temporary-blocker-contract",
+        "effect": "temporary-blocker",
+        "maxHealth": 30,
+        "radius": 0.72,
+        "lifetime": 1.2
+      }
+    ],
+    "placements": [
+      {
+        "typeId": "corrupted-roots",
+        "x": 4,
+        "z": 3
+      },
+      {
+        "typeId": "corrupted-roots",
+        "x": 5,
+        "z": 1
+      }
+    ]
+  },
+  "terrainProps": {
+    "catalog": [
+      {
+        "id": "mordor-rock-cluster",
+        "name": "Mordor Rock Cluster",
+        "role": "visual-terrain-prop",
+        "effect": "visual-only",
+        "modelPath": "res://assets/models/terrain/mordor_rock_cluster_proxy.glb",
+        "modelYawDegrees": 18.0,
+        "modelLift": 0.0,
+        "targetHeight": 0.62,
+        "targetFootprint": 0.88
+      }
+    ],
+    "placements": [
+      {
+        "typeId": "mordor-rock-cluster",
+        "x": 1,
+        "z": 1
+      },
+      {
+        "typeId": "mordor-rock-cluster",
+        "x": 6,
+        "z": 4
+      }
+    ]
+  },
+  "enemies": {
+    "catalog": [
+      {
+        "id": "gondor-soldier",
+        "name": "Gondor Soldier",
+        "faction": "free-peoples",
+        "health": 32,
+        "speed": 1.35,
+        "reward": 5,
+        "damage": 1
+      },
+      {
+        "id": "gondor-warrior",
+        "name": "Gondor Warrior",
+        "faction": "free-peoples",
+        "health": 36,
+        "speed": 1.25,
+        "reward": 6,
+        "damage": 1,
+        "modelPath": "res://assets/models/enemies/gondor_warrior_proxy.glb",
+        "modelYawDegrees": -35.0,
+        "modelLift": 0.0,
+        "targetHeight": 1.05,
+        "targetFootprint": 0.84,
+        "baseMarkerName": "GondorWarriorBaseMarker",
+        "baseMarkerColor": { "r": 0.22, "g": 0.26, "b": 0.32, "a": 0.88 }
+      },
+      {
+        "id": "elven-archer",
+        "name": "Elven Archer",
+        "faction": "free-peoples",
+        "health": 24,
+        "speed": 1.5,
+        "reward": 7,
+        "damage": 1,
+        "modelPath": "res://assets/models/enemies/elf_archer_proxy.glb",
+        "modelYawDegrees": -35.0,
+        "modelLift": 0.0,
+        "targetHeight": 1.15,
+        "targetFootprint": 0.86,
+        "baseMarkerName": "ElfEnemyBaseMarker",
+        "baseMarkerColor": { "r": 0.18, "g": 0.32, "b": 0.24, "a": 0.88 }
+      },
+      {
+        "id": "dwarven-warrior",
+        "name": "Dwarven Warrior",
+        "faction": "free-peoples",
+        "health": 46,
+        "speed": 1.05,
+        "reward": 8,
+        "damage": 1,
+        "modelPath": "res://assets/models/enemies/dwarven_warrior_proxy.glb",
+        "modelYawDegrees": -35.0,
+        "modelLift": 0.0,
+        "targetHeight": 0.98,
+        "targetFootprint": 0.82,
+        "baseMarkerName": "DwarfEnemyBaseMarker",
+        "baseMarkerColor": { "r": 0.20, "g": 0.22, "b": 0.20, "a": 0.88 }
+      }
+    ]
+  },
+  "waves": [
+    {
+      "id": "wave-1",
+      "spawns": [
+        {
+          "enemyId": "elven-archer",
+          "count": 1,
+          "delay": 0.0,
+          "interval": 1.0
+        },
+        {
+          "enemyId": "dwarven-warrior",
+          "count": 1,
+          "delay": 0.75,
+          "interval": 1.0
+        },
+        {
+          "enemyId": "gondor-warrior",
+          "count": 1,
+          "delay": 1.5,
+          "interval": 1.0
+        }
+      ]
+    }
+  ]
+}

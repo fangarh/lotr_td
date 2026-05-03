@@ -1,0 +1,69 @@
+# Mechanics
+
+## Current Mechanics
+
+Current tower-defense systems:
+- campaign levels with waves;
+- tower placement on buildable tiles;
+- tower upgrades with tiers and branches;
+- tester menu for unlocking upgrades, adding gold, adding waves, and infinite gold;
+- camera drag and wheel panning;
+- large maps from `32x32` to `50x50`;
+- visible tile rendering optimization.
+
+Current implementation caveat:
+- Tower and enemy catalogs have completed the first Shadow data/UI pivot.
+- Tower behavior still preserves the pre-pivot prototype roles: precision, pierce, chain, and bombard.
+- The Godot spike tower proxy now supports catalog-driven GLB model paths and textured OBJ mesh paths. It places the base Eye tower plus user-provided Shadow tower visual proxies for B2, textured B3, and B4. `PlaceholderTower` remains presentation-only; targeting and damage are owned by the scene-level tower attack adapter.
+- `SpikeTowerAttackAdapter` is the first thin Godot tower attack boundary. It registers placed tower nodes and catalog stats, reads live targets from `SpikeCombatAdapter.get_tracked_enemies()`, ignores invalid/dead tracked targets, respects `fireRate` cooldowns, and applies damage only through `combat_adapter.apply_damage(enemy, amount)`. Successful shots spawn a short-lived visual-only tower fire cue for readability. A capture-only script now records the current cue/projectile frame for visual review without changing mechanics. It does not implement upgrades, target priorities, splash/slow/marks, production projectile physics, path blockers, balance, or wave completion.
+- The B4 projectile asset from `shoot.zip` is still non-production. It remains available as a static tower preview and can now be spawned by the tower attack adapter as a short visual-only moving shot review node when `projectileModelPath` exists. The review node starts near the tower, moves toward the targeted enemy over its configured lifetime, carries temporary ember glow/trail readability helpers, and expires; collision, hit timing, and damage are not driven by the projectile visual.
+- Obstacle towers are still spike-only. Slow-zone obstacle ownership, timed slow-zone spawning, temporary blocker HP/lifetime lifecycle, and the first enemy/blocker contact interaction now exist in Godot. Blockers can stop an enemy at contact radius and take signal-bridged damage, and a capture-only script now records that contact state for review. They still do not reroute paths or define stacking behavior.
+- Detailed dark tower visuals are deferred to the dark tower visual pass.
+- The first Godot spike has presentation-level placeholder behavior plus a minimal spawn-only wave runner: one tower proxy is spawned from catalog placements, path tiles may show a visual-only road surface model from `land.zip`, and enemy proxies are instantiated from JSON `waves` using delay/interval/count scheduling. These proxies now live behind separate Godot scene/script boundaries, and `spike_scenario.json` has portable board/path/towers/enemies/waves sections, but this is not yet the portable production combat simulation.
+- The current Godot enemy visual supports a procedural Gondor soldier fallback plus catalog-driven imported GLB proxies for the Elven archer, Dwarven warrior, and Gondor warrior. The Elven archer, Dwarven warrior, and Gondor warrior GLBs have been refreshed from user-provided ZIP PBR exports while preserving existing catalog ids and setup contracts. Enemy `setup(path_points, speed)` now moves along the configured path until the final point, where the proxy emits one `path_breached(enemy)` signal, hides/stops itself, and leaves the live targeting pool. It also has a first local lifecycle adapter: catalog health, current/max health, `apply_damage(amount)`, `is_alive()`, `get_health_fraction()`, health/death signals, death hiding, endpoint breach hiding, and a simple health bar. The enemy proxy can now receive runtime blocker snapshots from `Main`, stop while touching a blocker radius, and emit `blocker_attack_requested(blocker_id, amount)` on a small spike cadence. It still does not add animation, collision physics, Free Peoples-specific mechanics, path rerouting, or final blocker attack presentation.
+- `SpikeCombatAdapter` is now the thin Godot scene-level combat/state owner between spawned enemies and tower attacks. It registers enemies from `Main`, delegates damage to enemy proxies, exposes a read-only tracked-enemy list for targeting adapters, observes death signals, queues dead enemy nodes for removal, and tracks minimal kill/reward totals. It intentionally does not change `WaveRunner` scheduling or own tower cooldowns.
+- `SpikeWaveStateAdapter` is now the thin Godot scene-level wave-state owner. It starts the active wave with the expected spawn count, tracks spawned/active/removed enemies, listens to `SpikeCombatAdapter.enemy_removed`, and reports a wave clear only after spawning is complete and active enemies are gone. It intentionally does not own spawn scheduling, damage, rewards, path breaches, next-wave automation, win/loss state, or UI.
+- `SpikeGameStateAdapter` is now the thin Godot scenario-state owner above wave-state. It tracks configured wave ids, current wave index, configured base lives, explicit path breach count, and `idle` / `running` / `wave_clear` / `basic_win` / `basic_loss` states through manual start, clear, and breach hooks. `Main` now reads portable scenario state from JSON `gameState.baseLives`, applies it through `configure_base_lives()` before the first wave starts, marks the first wave as running, relays `SpikeWaveStateAdapter.wave_cleared`, bridges enemy `path_breached(enemy)` signals to `mark_path_breach()`, exposes `start_next_wave_manually()` as the first explicit hook from `wave_clear` into the next `WaveRunner` wave, and exposes `restart_current_scenario_manually()` as a terminal-state-only local restart hook. `Main._unhandled_input` maps the temporary debug key `N` to the manual next-wave hook, so it inherits the existing refusal to advance while a wave is running or after terminal states; it also maps temporary debug key `R` to the manual restart hook, so restart remains limited to `basic_win` or `basic_loss`. Endpoint breaches remove enemies through `SpikeCombatAdapter.unregister_enemy()` so wave-state sees removal, but they do not count as kills or grant rewards. Manual restart rebuilds the current spike runtime after `basic_win` or `basic_loss`; it is not automatic retry, UI, balance pass, tower cooldown ownership, combat damage ownership change, or production restart flow.
+- The two-wave smoke fixture now locks a complete endpoint-breach progression path: with `baseLives=2`, the first breached enemy clears wave 1 without loss, manual next-wave starts wave 2, and the second breached enemy reaches terminal `basic_loss`. This is coverage of existing boundaries, not a new production reset/retry/loss-screen system.
+- `SpikeHud` is the first Godot HUD boundary. It is a `Control` node bound by `Main` to the existing game-state, wave-state, and combat adapters, showing state, wave id/index, lives, breach count, and active enemy count in a compact top bar with a two-row narrow mobile layout. It now has one compact action shell: hidden while `running`, `Next wave` during `wave_clear`, and `Restart` during `basic_win` / `basic_loss`. The button only emits HUD signals; `Main` still owns calls to `start_next_wave_manually()` and `restart_current_scenario_manually()`. The HUD does not own path breaches, damage, rewards, targeting, balance, auto-advance, restart state, or production menu flow.
+- The Godot spike now also places corrupted-roots/web obstacle proxies from JSON `obstacles.placements`. The first gameplay contract is slow-zone-only: catalog entries may declare `effect: "slow-zone"`, `slowMultiplier`, and `radius`; `SpikeObstacleTowerAdapter` registers existing static obstacle placements as runtime slow-zone effects, and `Main` passes the adapter-provided world-space zones to spawned `PlaceholderEnemy` proxies. Enemies still apply the strongest active multiplier during local path movement. `shadow-tower-b2` now also declares timed obstacle spawning fields and periodically creates temporary runtime slow zones through `SpikeObstacleTowerAdapter` at nearby path points. These spawned zones expire after their configured lifetime. `Main` synchronizes the current adapter slow-zone list into already-spawned enemies after obstacle adapter advancement, so timed zones affect active enemies without moving slow application out of `PlaceholderEnemy`. `tests/capture_timed_slow_zone_preview.gd` is capture-only instrumentation for that timed tower-owned path. Obstacles still do not block, redirect, take damage, attack, receive enemy attacks, change rewards/damage, own wave/game state, define stacking policy, or visually spawn production props.
+- The first temporary blocker HP lifecycle boundary is implemented in `SpikeObstacleTowerAdapter`. Runtime blockers are spawned from `effect: "temporary-blocker"` catalog data, currently via the `orc-blockade` fixture referenced by `shadow-tower-b3`; each blocker has id, source tower id, position, radius, max/current HP, optional remaining lifetime, read-only output through `get_blockers()`, and explicit removal through `apply_blocker_damage(blocker_id, amount)` or lifetime expiry. The first enemy/blocker interaction is contact-only: `Main` synchronizes blocker snapshots into spawned enemies, enemies stop while inside a blocker radius and request damage through a signal, and `Main` applies that damage through the obstacle adapter. `tests/capture_blocker_contact_preview.gd` is capture-only instrumentation for this state. This still does not reroute paths, define stacking policy, retarget towers, grant rewards, change wave/game state, add production placement UI, add final VFX, or tune balance.
+- Slow-zone readability is now locked by local visual instrumentation: `tests/capture_spike_slow_zone_preview.gd` validates an active static obstacle slow multiplier and saves `builds/previews/spike_slow_zone_preview.png` with capture-only marker/label helpers. `tests/capture_timed_slow_zone_preview.gd` validates a timed tower-owned slow multiplier on an already-spawned enemy and saves `builds/previews/timed_slow_zone_preview.png` with capture-only marker/label helpers. These markers are not production UI or gameplay objects.
+- The Godot spike now places visual-only terrain props from JSON `terrainProps.placements` under `World/TerrainProps`. The first imported Mordor rock cluster proxy is decorative and does not affect placement, pathing, slowing, blocking, enemy targeting, or corruption rules.
+- Simulation extraction has moved upgrade/sell rules into portable code: spawning timers, enemy creation, enemy movement, target selection helpers, tower placement, tower upgrades, tower selling/refund value, tower cooldown/attack orchestration, damage application with hit/slow/splash handling, projectile/beam/mark/shockwave effect creation, kill rewards/effects, outcome transitions, projectile aging, and effect aging live in `src/simulation.js`; `src/main.js` keeps browser callbacks for status, sound, saving progress, level switching, and UI sync.
+
+## Planned Shadow Mechanics
+
+The faction pivot should preserve existing systems first, then revise attacks and balance.
+
+Monetization must not leak into combat rules. Paid gameplay expansions can add isolated campaigns or scenarios, but they must not unlock stronger base-campaign towers, upgrades, passives, or other advantages. Cosmetic purchases can change visuals only.
+
+Planned tower behavior themes:
+- direct damage;
+- area fire or siege;
+- fear/curse/control;
+- marking or revealing through the Eye;
+- slow or bind;
+- obstacle creation.
+
+## Obstacle Towers
+
+At least one or two tower families should affect the enemy path with obstacles.
+
+Candidate obstacle types:
+- Orc blockade: periodically places soldiers on the path. They delay attackers and can be destroyed.
+- Spider webs: creates a sticky zone on road tiles, slowing or binding enemies.
+- Corrupted roots: dark growth erupts from terrain, blocking or redirecting pressure for a short time.
+
+Important design concern:
+- Obstacles must not permanently break pathing unless the pathing system is explicitly upgraded.
+- First implementation should likely use temporary blockers or slow zones rather than full path rerouting.
+- The first Godot obstacle gameplay spike started with slow zones, then added adapter-owned blocker HP, and now has a first contact stop plus blocker damage signal. Full path rerouting, stacking rules, rewards, production placement UI, and final enemy/blocker behavior remain open decisions.
+
+## Open Combat Questions
+
+- Should enemies attack blockers?
+- Should temporary blockers have armor, resistances, or only flat HP?
+- Can obstacle towers stack?
+- Should the Eye of Sauron be a tower, spell, or global resource?
+- Will terrain corruption affect enemy speed/resistance?

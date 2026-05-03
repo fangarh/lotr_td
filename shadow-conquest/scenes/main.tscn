@@ -1,0 +1,58 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/camera_controller.gd" id="2_camera"]
+[ext_resource type="Script" path="res://scripts/board_view.gd" id="3_board"]
+[ext_resource type="Script" path="res://scripts/spike_combat_adapter.gd" id="4_combat"]
+[ext_resource type="Script" path="res://scripts/spike_tower_attack_adapter.gd" id="5_attack"]
+[ext_resource type="Script" path="res://scripts/spike_wave_state_adapter.gd" id="6_wave_state"]
+[ext_resource type="Script" path="res://scripts/spike_game_state_adapter.gd" id="7_game_state"]
+[ext_resource type="Script" path="res://scripts/spike_hud.gd" id="8_hud"]
+[ext_resource type="Script" path="res://scripts/spike_obstacle_tower_adapter.gd" id="9_obstacle_tower"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="CombatAdapter" type="Node" parent="."]
+script = ExtResource("4_combat")
+
+[node name="TowerAttackAdapter" type="Node3D" parent="."]
+script = ExtResource("5_attack")
+
+[node name="ObstacleTowerAdapter" type="Node" parent="."]
+script = ExtResource("9_obstacle_tower")
+
+[node name="WaveStateAdapter" type="Node" parent="."]
+script = ExtResource("6_wave_state")
+
+[node name="GameStateAdapter" type="Node" parent="."]
+script = ExtResource("7_game_state")
+
+[node name="HUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("8_hud")
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="BoardView" type="Node3D" parent="World"]
+script = ExtResource("3_board")
+
+[node name="Towers" type="Node3D" parent="World"]
+
+[node name="Obstacles" type="Node3D" parent="World"]
+
+[node name="TerrainProps" type="Node3D" parent="World"]
+
+[node name="Enemies" type="Node3D" parent="World"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+projection = 1
+size = 9.0
+near = 0.05
+far = 100.0
+script = ExtResource("2_camera")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 0, 6, 0)
+light_energy = 1.6

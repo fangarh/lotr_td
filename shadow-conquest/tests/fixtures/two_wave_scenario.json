@@ -1,0 +1,68 @@
+{
+  "board": {
+    "width": 4,
+    "height": 3,
+    "tileSize": 1.0
+  },
+  "gameState": {
+    "baseLives": 2
+  },
+  "path": {
+    "id": "test-road",
+    "points": [
+      { "x": 0, "z": 1 },
+      { "x": 1, "z": 1 },
+      { "x": 2, "z": 1 },
+      { "x": 3, "z": 1 }
+    ]
+  },
+  "towers": {
+    "catalog": [],
+    "placements": []
+  },
+  "obstacles": {
+    "catalog": [],
+    "placements": []
+  },
+  "terrainProps": {
+    "catalog": [],
+    "placements": []
+  },
+  "enemies": {
+    "catalog": [
+      {
+        "id": "test-soldier",
+        "name": "Test Soldier",
+        "faction": "free-peoples",
+        "health": 10,
+        "speed": 0.0,
+        "reward": 1,
+        "damage": 1
+      }
+    ]
+  },
+  "waves": [
+    {
+      "id": "test-wave-1",
+      "spawns": [
+        {
+          "enemyId": "test-soldier",
+          "count": 1,
+          "delay": 0.0,
+          "interval": 1.0
+        }
+      ]
+    },
+    {
+      "id": "test-wave-2",
+      "spawns": [
+        {
+          "enemyId": "test-soldier",
+          "count": 1,
+          "delay": 0.0,
+          "interval": 1.0
+        }
+      ]
+    }
+  ]
+}

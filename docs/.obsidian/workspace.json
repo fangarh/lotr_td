@@ -1,0 +1,219 @@
+{
+  "main": {
+    "id": "1b5f50ee0be6654c",
+    "type": "split",
+    "children": [
+      {
+        "id": "c997443c8ac200b3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6825011a890615eb",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "changelog.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "changelog"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "679c8b25f04b5823",
+    "type": "split",
+    "children": [
+      {
+        "id": "bc721243620fcdeb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "83be953abc5120c2",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Файловый менеджер"
+            }
+          },
+          {
+            "id": "f0c34b919dfee4e0",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Поиск"
+            }
+          },
+          {
+            "id": "9c80b3255017f25e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Закладки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "fc34e445fe5a0e84",
+    "type": "split",
+    "children": [
+      {
+        "id": "e36f52aca8bc5179",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7708bcdde6ce871d",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "changelog.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Обратные ссылки для changelog"
+            }
+          },
+          {
+            "id": "672682c84c2f3def",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "changelog.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Исходящие ссылки из changelog"
+            }
+          },
+          {
+            "id": "987ac739853baf31",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Теги"
+            }
+          },
+          {
+            "id": "ab1f8558b36ffcfe",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Все свойства"
+            }
+          },
+          {
+            "id": "11323875fb8328bb",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "changelog.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Структура changelog"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Меню быстрого перехода": false,
+      "graph:Граф": false,
+      "canvas:Создать новый холст": false,
+      "daily-notes:Сегодняшняя заметка": false,
+      "templates:Вставить шаблон": false,
+      "command-palette:Открыть палитру команд": false,
+      "bases:Создать новую базу": false
+    }
+  },
+  "active": "6825011a890615eb",
+  "lastOpenFiles": [
+    "superpowers/plans/2026-05-03-godot-scenario-selection-foundation.md",
+    "superpowers/specs/2026-05-03-godot-two-map-mvp-corridor-design.md",
+    "superpowers/plans/2026-05-03-godot-blocker-contact-readability-capture.md",
+    "superpowers/specs/2026-05-03-godot-blocker-contact-readability-capture-design.md",
+    "superpowers/plans/2026-05-03-godot-enemy-blocker-contact.md",
+    "superpowers/specs/2026-05-03-godot-enemy-blocker-contact-design.md",
+    "superpowers/plans/2026-05-03-godot-temporary-blocker-hp-lifecycle.md",
+    "superpowers/specs/2026-05-03-godot-temporary-blocker-hp-contract-design.md",
+    "superpowers/plans/2026-05-03-godot-timed-slow-zone-readability-capture.md",
+    "superpowers/specs/2026-05-03-godot-timed-slow-zone-readability-capture-design.md",
+    "superpowers/plans/2026-05-03-godot-live-slow-zone-propagation.md",
+    "superpowers/specs/2026-05-03-godot-live-slow-zone-propagation-design.md",
+    "superpowers/plans/2026-05-03-godot-timed-slow-zone-spawning.md",
+    "superpowers/specs/2026-05-03-godot-timed-slow-zone-spawning-design.md",
+    "superpowers/plans/2026-05-03-godot-obstacle-tower-ownership.md",
+    "superpowers/specs/2026-05-03-godot-obstacle-tower-ownership-design.md",
+    "superpowers/plans/2026-05-03-godot-obstacle-slow-zone-spike.md",
+    "superpowers/specs/2026-05-03-godot-obstacle-slow-zone-spike-design.md",
+    "mockups/server-8766.err.log",
+    "mockups/server-8766.out.log",
+    "mockups/hud-options.html",
+    "mockups",
+    "superpowers/specs/2026-05-02-elf-archer-blender-asset-design.md",
+    "superpowers/specs/2026-05-02-downloadable-content-and-monetization-design.md",
+    "superpowers/specs/2026-05-01-godot-2-5d-asset-pipeline-design.md",
+    "superpowers/specs/2026-05-01-godot-migration-design.md",
+    "superpowers/specs/2026-05-01-shadow-data-ui-pivot-design.md",
+    "superpowers/specs/2026-04-30-isometric-middle-earth-td-design.md",
+    "superpowers/plans/2026-05-01-shadow-data-ui-pivot.md",
+    "iteration-prompts.md"
+  ]
+}

@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+*.glb binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.apk binary
+*.exe binary
+*.wasm binary
+*.pck binary

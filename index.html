@@ -1,0 +1,64 @@
+﻿<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Тень над Средиземьем</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23d8ad45' d='M32 5 51 17v24L32 59 13 41V17z'/%3E%3Cpath fill='%23111314' d='M32 14 44 22v15L32 49 20 37V22z'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="stage" aria-label="Поле завоевания">
+        <canvas id="game" width="1280" height="820"></canvas>
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Завоевание</p>
+            <h1>Поход Тени</h1>
+          </div>
+          <div class="hud-cluster">
+            <div class="resource-grid" aria-live="polite">
+              <span><strong id="gold">0</strong> золото</span>
+              <span><strong id="lives">0</strong> воля</span>
+              <span><strong id="wave">0/0</strong> натиск</span>
+              <span><strong id="unlock">II</strong> предел</span>
+            </div>
+            <button id="soundToggle" class="sound-toggle" type="button" aria-label="Переключить звук" aria-pressed="false" data-tooltip="Включить или выключить короткие звуковые сигналы.">Звук: выкл</button>
+          </div>
+        </div>
+        <div id="status" class="status">Выбери оплот Тени и закрепись на свободной земле.</div>
+      </section>
+
+      <aside class="panel" aria-label="Управление">
+        <label class="field">
+          <span>Регион кампании</span>
+          <select id="levelSelect"></select>
+        </label>
+        <div id="campaignProgress" class="campaign-progress"></div>
+
+        <div class="section-title">Оплоты</div>
+        <div id="towerButtons" class="tower-list"></div>
+
+        <button id="startWave" class="primary" aria-label="Начать натиск" data-tooltip="Вызвать следующую волну сопротивления.">Начать натиск</button>
+        <button id="restart" class="secondary" aria-label="Переиграть регион" data-tooltip="Начать выбранный регион заново без изменения сохранённого прогресса.">Переиграть регион</button>
+
+        <div class="tester-panel" aria-label="Меню тестера">
+          <div class="section-title">Тестер</div>
+          <div class="tester-grid">
+            <button id="testerUnlockAll" type="button" data-tooltip="Открывает все регионы и все ветки усилений для текущей сессии.">Открыть всё</button>
+            <button id="testerAddGold" type="button" data-tooltip="Добавляет 1000 золота на текущий регион.">+1000 золота</button>
+            <button id="testerAddWaves" type="button" data-tooltip="Добавляет две повторные волны к текущему региону.">+2 волны</button>
+            <button id="testerInfiniteGold" type="button" aria-pressed="false" data-tooltip="Оплоты и усиления перестают тратить золото.">Деньги: обычные</button>
+          </div>
+          <div id="testerStatus" class="tester-status">Тест: кампания · волн 0</div>
+        </div>
+
+        <div class="section-title">Выбранный объект</div>
+        <div id="selection" class="selection">Клетка не выбрана.</div>
+        <div id="upgradeButtons" class="upgrade-list"></div>
+      </aside>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
