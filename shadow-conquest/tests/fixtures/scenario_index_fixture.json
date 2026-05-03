@@ -1,0 +1,17 @@
+{
+  "defaultScenarioId": "fixture-map-1",
+  "scenarios": [
+    {
+      "id": "fixture-map-1",
+      "name": "Fixture Map One",
+      "path": "res://tests/fixtures/two_wave_scenario.json",
+      "summary": "Baseline fixture map."
+    },
+    {
+      "id": "fixture-map-2",
+      "name": "Fixture Map Two",
+      "path": "res://tests/fixtures/alternate_scenario.json",
+      "summary": "Alternate fixture map."
+    }
+  ]
+}
