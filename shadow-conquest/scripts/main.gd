@@ -1,11 +1,13 @@
 extends Node3D
 
 @export_file("*.json") var scenario_path: String = "res://data/spike_scenario.json"
+@export_file("*.json") var scenario_index_path: String = "res://data/scenario_index.json"
 
 const PLACEHOLDER_TOWER_SCENE := preload("res://scenes/entities/placeholder_tower.tscn")
 const PLACEHOLDER_OBSTACLE_SCENE := preload("res://scenes/entities/placeholder_obstacle.tscn")
 const PLACEHOLDER_TERRAIN_PROP_SCENE := preload("res://scenes/entities/placeholder_terrain_prop.tscn")
 const PLACEHOLDER_ENEMY_SCENE := preload("res://scenes/entities/placeholder_enemy.tscn")
+const SCENARIO_CATALOG_SCRIPT := preload("res://scripts/spike_scenario_catalog.gd")
 const WAVE_RUNNER_SCRIPT := preload("res://scripts/wave_runner.gd")
 const DEBUG_NEXT_WAVE_KEY := KEY_N
 const DEBUG_RESTART_KEY := KEY_R
@@ -24,6 +26,9 @@ const DEBUG_RESTART_KEY := KEY_R
 @onready var hud: Control = $HUD
 
 var _scenario: Dictionary = {}
+var _scenario_catalog: RefCounted = SCENARIO_CATALOG_SCRIPT.new()
+var _active_scenario_id := ""
+var _active_scenario_name := ""
 var _tower_catalog: Dictionary = {}
 var _obstacle_catalog: Dictionary = {}
 var _terrain_prop_catalog: Dictionary = {}
@@ -32,10 +37,37 @@ var _path_lookup: Dictionary = {}
 var _path_points: Array[Vector3] = []
 var _wave_runner: RefCounted = WAVE_RUNNER_SCRIPT.new()
 
-func _ready() -> void:
-	_scenario = _load_scenario()
+func available_scenarios() -> Array:
+	if _scenario_catalog.has_method("entries"):
+		return _scenario_catalog.call("entries") as Array
+	return []
+
+func active_scenario_id() -> String:
+	return _active_scenario_id
+
+func active_scenario_name() -> String:
+	return _active_scenario_name
+
+func load_scenario_by_id(scenario_id: String) -> bool:
+	if not _scenario_catalog.has_method("has_scenario") or not bool(_scenario_catalog.call("has_scenario", scenario_id)):
+		return false
+	var selected_path := str(_scenario_catalog.call("path_for_id", scenario_id))
+	var loaded := _load_scenario_from_path(selected_path)
+	if loaded.is_empty():
+		return false
+	_scenario = loaded
+	_active_scenario_id = scenario_id
+	_active_scenario_name = str(_scenario_catalog.call("name_for_id", scenario_id))
 	_cache_catalogs()
 	_cache_path()
+	_start_runtime_from_scenario()
+	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
+	hud.call("refresh")
+	return true
+
+func _ready() -> void:
+	_configure_scenario_catalog()
+	_load_initial_scenario_data()
 	tower_attack_adapter.call("set_combat_adapter", combat_adapter)
 	wave_state_adapter.call("set_combat_adapter", combat_adapter)
 	var wave_clear_callback := Callable(self, "_on_wave_cleared")
@@ -44,6 +76,33 @@ func _ready() -> void:
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
 	_bind_hud_action_signals()
+
+func _configure_scenario_catalog() -> void:
+	if scenario_path != "res://data/spike_scenario.json":
+		return
+	if scenario_index_path != "" and FileAccess.file_exists(scenario_index_path):
+		_scenario_catalog.call("load_from_path", scenario_index_path)
+
+func _load_initial_scenario_data() -> void:
+	var default_id := ""
+	if _scenario_catalog.has_method("default_scenario_id"):
+		default_id = str(_scenario_catalog.call("default_scenario_id"))
+	if default_id != "" and _scenario_catalog.has_method("path_for_id"):
+		var selected_path := str(_scenario_catalog.call("path_for_id", default_id))
+		var loaded := _load_scenario_from_path(selected_path)
+		if not loaded.is_empty():
+			_scenario = loaded
+			_active_scenario_id = default_id
+			_active_scenario_name = str(_scenario_catalog.call("name_for_id", default_id))
+			_cache_catalogs()
+			_cache_path()
+			return
+
+	_scenario = _load_scenario_from_path(scenario_path)
+	_active_scenario_id = str(_scenario.get("id", ""))
+	_active_scenario_name = str(_scenario.get("name", _active_scenario_id))
+	_cache_catalogs()
+	_cache_path()
 
 func _start_runtime_from_scenario() -> void:
 	_clear_runtime_node_children(towers)
@@ -93,15 +152,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		if viewport != null:
 			viewport.set_input_as_handled()
 
-func _load_scenario() -> Dictionary:
-	if not FileAccess.file_exists(scenario_path):
-		push_error("Missing spike scenario data: %s" % scenario_path)
+func _load_scenario_from_path(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		push_error("Missing scenario data: %s" % path)
 		return {}
 
-	var file := FileAccess.open(scenario_path, FileAccess.READ)
+	var file := FileAccess.open(path, FileAccess.READ)
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	if typeof(parsed) != TYPE_DICTIONARY:
-		push_error("Spike scenario data must be a JSON object.")
+		push_error("Scenario data must be a JSON object: %s" % path)
 		return {}
 
 	return parsed as Dictionary
