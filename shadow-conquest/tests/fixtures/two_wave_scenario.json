@@ -5,7 +5,8 @@
     "tileSize": 1.0
   },
   "gameState": {
-    "baseLives": 2
+    "baseLives": 2,
+    "startingGold": 100
   },
   "path": {
     "id": "test-road",
@@ -17,8 +18,46 @@
     ]
   },
   "towers": {
-    "catalog": [],
-    "placements": []
+    "catalog": [
+      {
+        "id": "fixture-eye",
+        "name": "Fixture Eye",
+        "role": "test-direct",
+        "cost": 40,
+        "range": 0.1,
+        "damage": 4,
+        "fireRate": 1.0
+      },
+      {
+        "id": "fixture-expensive",
+        "name": "Fixture Expensive Tower",
+        "role": "test-expensive",
+        "cost": 200,
+        "range": 0.1,
+        "damage": 8,
+        "fireRate": 1.0
+      }
+    ],
+    "placements": [
+      {
+        "typeId": "fixture-eye",
+        "x": 1,
+        "z": 0
+      }
+    ],
+    "buildSpots": [
+      {
+        "id": "fixture-prebuilt-spot",
+        "x": 1,
+        "z": 0
+      },
+      {
+        "id": "fixture-open-spot",
+        "x": 2,
+        "z": 0,
+        "allowedTypeIds": ["fixture-eye", "fixture-expensive"]
+      }
+    ]
   },
   "obstacles": {
     "catalog": [],

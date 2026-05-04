@@ -7,7 +7,8 @@
     "tileSize": 1.0
   },
   "gameState": {
-    "baseLives": 3
+    "baseLives": 3,
+    "startingGold": 25
   },
   "path": {
     "id": "fixture-road-two",
@@ -20,8 +21,26 @@
     ]
   },
   "towers": {
-    "catalog": [],
-    "placements": []
+    "catalog": [
+      {
+        "id": "fixture-eye",
+        "name": "Fixture Eye",
+        "role": "test-direct",
+        "cost": 40,
+        "range": 0.1,
+        "damage": 4,
+        "fireRate": 1.0
+      }
+    ],
+    "placements": [],
+    "buildSpots": [
+      {
+        "id": "fixture-map-2-spot",
+        "x": 2,
+        "z": 0,
+        "allowedTypeIds": ["fixture-eye"]
+      }
+    ]
   },
   "obstacles": {
     "catalog": [],

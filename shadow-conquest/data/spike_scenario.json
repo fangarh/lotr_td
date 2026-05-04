@@ -7,7 +7,8 @@
     "tileSize": 1.0
   },
   "gameState": {
-    "baseLives": 5
+    "baseLives": 5,
+    "startingGold": 120
   },
   "path": {
     "id": "ash-road",
@@ -33,6 +34,7 @@
         "id": "eye-of-sauron",
         "name": "Eye of Sauron",
         "role": "magic",
+        "cost": 45,
         "range": 3.0,
         "damage": 18,
         "fireRate": 0.8,
@@ -46,6 +48,7 @@
         "id": "shadow-tower-b2",
         "name": "Shadow Tower B2",
         "role": "visual-proxy",
+        "cost": 55,
         "range": 2.8,
         "damage": 14,
         "fireRate": 0.9,
@@ -63,6 +66,7 @@
         "id": "shadow-tower-b3",
         "name": "Shadow Tower B3",
         "role": "visual-proxy",
+        "cost": 65,
         "range": 3.2,
         "damage": 16,
         "fireRate": 0.75,
@@ -84,6 +88,7 @@
         "id": "shadow-tower-b4",
         "name": "Shadow Tower B4",
         "role": "visual-proxy",
+        "cost": 60,
         "range": 3.0,
         "damage": 15,
         "fireRate": 0.82,
@@ -118,6 +123,25 @@
         "typeId": "shadow-tower-b4",
         "x": 0,
         "z": 1
+      }
+    ],
+    "buildSpots": [
+      {
+        "id": "spike-prebuilt-eye",
+        "x": 3,
+        "z": 1
+      },
+      {
+        "id": "spike-spot-1",
+        "x": 2,
+        "z": 1,
+        "allowedTypeIds": ["eye-of-sauron", "shadow-tower-b2"]
+      },
+      {
+        "id": "spike-spot-2",
+        "x": 5,
+        "z": 4,
+        "allowedTypeIds": ["shadow-tower-b3", "shadow-tower-b4"]
       }
     ]
   },

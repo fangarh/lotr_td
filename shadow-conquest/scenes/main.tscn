@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/camera_controller.gd" id="2_camera"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/spike_game_state_adapter.gd" id="7_game_state"]
 [ext_resource type="Script" path="res://scripts/spike_hud.gd" id="8_hud"]
 [ext_resource type="Script" path="res://scripts/spike_obstacle_tower_adapter.gd" id="9_obstacle_tower"]
+[ext_resource type="Script" path="res://scripts/spike_build_state_adapter.gd" id="10_build_state"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -28,6 +29,9 @@ script = ExtResource("6_wave_state")
 [node name="GameStateAdapter" type="Node" parent="."]
 script = ExtResource("7_game_state")
 
+[node name="BuildStateAdapter" type="Node" parent="."]
+script = ExtResource("10_build_state")
+
 [node name="HUD" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 0
@@ -39,6 +43,8 @@ script = ExtResource("8_hud")
 script = ExtResource("3_board")
 
 [node name="Towers" type="Node3D" parent="World"]
+
+[node name="BuildSpots" type="Node3D" parent="World"]
 
 [node name="Obstacles" type="Node3D" parent="World"]
 

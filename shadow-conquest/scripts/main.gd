@@ -15,6 +15,7 @@ const DEBUG_RESTART_KEY := KEY_R
 @onready var world: Node3D = $World
 @onready var board_view: Node3D = $World/BoardView
 @onready var towers: Node3D = $World/Towers
+@onready var build_spots: Node3D = $World/BuildSpots
 @onready var obstacles: Node3D = $World/Obstacles
 @onready var terrain_props: Node3D = $World/TerrainProps
 @onready var enemies: Node3D = $World/Enemies
@@ -23,6 +24,7 @@ const DEBUG_RESTART_KEY := KEY_R
 @onready var obstacle_tower_adapter: Node = $ObstacleTowerAdapter
 @onready var wave_state_adapter: Node = $WaveStateAdapter
 @onready var game_state_adapter: Node = $GameStateAdapter
+@onready var build_state_adapter: Node = $BuildStateAdapter
 @onready var hud: Control = $HUD
 
 var _scenario: Dictionary = {}
@@ -108,6 +110,7 @@ func _load_initial_scenario_data() -> void:
 
 func _start_runtime_from_scenario() -> void:
 	_clear_runtime_node_children(towers)
+	_clear_runtime_node_children(build_spots)
 	_clear_runtime_node_children(obstacles)
 	_clear_runtime_node_children(terrain_props)
 	_clear_runtime_node_children(enemies)
@@ -119,11 +122,54 @@ func _start_runtime_from_scenario() -> void:
 		obstacle_tower_adapter.call("reset_runtime_state")
 	if obstacle_tower_adapter.has_method("set_path_points"):
 		obstacle_tower_adapter.call("set_path_points", _path_points)
+	if build_state_adapter.has_method("configure"):
+		build_state_adapter.call("configure", _scenario_build_spots(), _tower_catalog, _scenario_starting_gold(), _occupied_cells_from_initial_towers())
 	_build_world()
+	_spawn_build_spot_markers()
 	_spawn_towers()
 	_spawn_obstacles()
 	_spawn_terrain_props()
 	_start_first_wave()
+
+func build_tower_at_spot(spot_id: String, tower_type_id: String) -> bool:
+	if not build_state_adapter.has_method("build_at"):
+		return false
+
+	var result_variant: Variant = build_state_adapter.call("build_at", spot_id, tower_type_id)
+	if typeof(result_variant) != TYPE_DICTIONARY:
+		return false
+
+	var result := result_variant as Dictionary
+	if not bool(result.get("ok", false)):
+		return false
+
+	var spot_variant: Variant = result.get("spot", {})
+	if typeof(spot_variant) != TYPE_DICTIONARY:
+		return false
+
+	var spot := spot_variant as Dictionary
+	var cell := Vector2i(_dict_int(spot, "x", 0), _dict_int(spot, "z", 0))
+	var tower := _spawn_tower_at_cell(tower_type_id, cell)
+	if tower == null:
+		return false
+
+	_spawn_build_spot_markers()
+	return true
+
+func get_build_gold() -> int:
+	if build_state_adapter.has_method("get_gold"):
+		return int(build_state_adapter.call("get_gold"))
+	return 0
+
+func get_available_build_spots() -> Array:
+	if build_state_adapter.has_method("get_available_build_spots"):
+		return build_state_adapter.call("get_available_build_spots") as Array
+	return []
+
+func get_tower_build_options() -> Array:
+	if build_state_adapter.has_method("get_tower_options"):
+		return build_state_adapter.call("get_tower_options") as Array
+	return []
 
 func _process(delta: float) -> void:
 	if obstacle_tower_adapter.has_method("advance"):
@@ -219,21 +265,66 @@ func _spawn_towers() -> void:
 
 		var placement := placement_variant as Dictionary
 		var type_id := _dict_string(placement, "typeId", "")
-		if type_id != "" and not _tower_catalog.has(type_id):
-			push_warning("Skipping unknown tower type in spike scenario: %s" % type_id)
+		var cell := Vector2i(_dict_int(placement, "x", 3), _dict_int(placement, "z", 1))
+		_spawn_tower_at_cell(type_id, cell)
+
+func _spawn_tower_at_cell(type_id: String, cell: Vector2i) -> Node3D:
+	if type_id != "" and not _tower_catalog.has(type_id):
+		push_warning("Skipping unknown tower type in spike scenario: %s" % type_id)
+		return null
+
+	var tower_config_variant: Variant = _tower_catalog.get(type_id, {})
+	if typeof(tower_config_variant) != TYPE_DICTIONARY:
+		push_warning("Skipping invalid tower type in spike scenario: %s" % type_id)
+		return null
+
+	var tower_config := tower_config_variant as Dictionary
+	var tower := PLACEHOLDER_TOWER_SCENE.instantiate() as Node3D
+	var world_position := board_view.call("tile_to_world", cell) as Vector3
+	tower.call("configure_visual", tower_config)
+	tower.call("setup", world_position)
+	towers.add_child(tower)
+	tower_attack_adapter.call("register_tower", tower, tower_config)
+	if obstacle_tower_adapter.has_method("register_tower"):
+		obstacle_tower_adapter.call("register_tower", tower, tower_config, _obstacle_catalog)
+	return tower
+
+func _spawn_build_spot_markers() -> void:
+	_clear_build_spot_markers()
+	for spot_variant: Variant in get_available_build_spots():
+		if typeof(spot_variant) != TYPE_DICTIONARY:
 			continue
 
-		var cell := Vector2i(_dict_int(placement, "x", 3), _dict_int(placement, "z", 1))
-		var tower_config_variant: Variant = _tower_catalog.get(type_id, {})
-		var tower_config := tower_config_variant as Dictionary
-		var tower := PLACEHOLDER_TOWER_SCENE.instantiate()
-		var world_position := board_view.call("tile_to_world", cell) as Vector3
-		tower.call("configure_visual", tower_config)
-		tower.call("setup", world_position)
-		towers.add_child(tower)
-		tower_attack_adapter.call("register_tower", tower, tower_config)
-		if obstacle_tower_adapter.has_method("register_tower"):
-			obstacle_tower_adapter.call("register_tower", tower, tower_config, _obstacle_catalog)
+		var spot := spot_variant as Dictionary
+		var cell := Vector2i(_dict_int(spot, "x", 0), _dict_int(spot, "z", 0))
+		var marker_root := Node3D.new()
+		marker_root.name = "BuildSpot_%s" % str(spot.get("id", "spot"))
+		marker_root.position = (board_view.call("tile_to_world", cell) as Vector3) + Vector3(0.0, 0.045, 0.0)
+
+		var marker_mesh := MeshInstance3D.new()
+		marker_mesh.name = "Marker"
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = 0.26
+		cylinder.bottom_radius = 0.26
+		cylinder.height = 0.035
+		cylinder.radial_segments = 24
+		marker_mesh.mesh = cylinder
+
+		var material := StandardMaterial3D.new()
+		material.albedo_color = Color(0.55, 0.08, 0.04, 0.72)
+		material.emission_enabled = true
+		material.emission = Color(0.8, 0.08, 0.02)
+		material.emission_energy_multiplier = 0.25
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		marker_mesh.material_override = material
+
+		marker_root.add_child(marker_mesh)
+		build_spots.add_child(marker_root)
+
+func _clear_build_spot_markers() -> void:
+	for child in build_spots.get_children():
+		build_spots.remove_child(child)
+		child.free()
 
 func _spawn_obstacles() -> void:
 	var obstacles_variant: Variant = _scenario.get("obstacles", {})
@@ -485,6 +576,48 @@ func _scenario_base_lives() -> int:
 
 	var game_state := game_state_variant as Dictionary
 	return maxi(_dict_int(game_state, "baseLives", 1), 1)
+
+func _scenario_starting_gold() -> int:
+	var game_state_variant: Variant = _scenario.get("gameState", {})
+	if typeof(game_state_variant) != TYPE_DICTIONARY:
+		return 0
+
+	var game_state := game_state_variant as Dictionary
+	return maxi(_dict_int(game_state, "startingGold", 0), 0)
+
+func _scenario_build_spots() -> Array:
+	var towers_variant: Variant = _scenario.get("towers", {})
+	if typeof(towers_variant) != TYPE_DICTIONARY:
+		return []
+
+	var tower_data := towers_variant as Dictionary
+	var build_spots_variant: Variant = tower_data.get("buildSpots", [])
+	if typeof(build_spots_variant) != TYPE_ARRAY:
+		return []
+
+	return build_spots_variant as Array
+
+func _occupied_cells_from_initial_towers() -> Array:
+	var occupied: Array = []
+	var towers_variant: Variant = _scenario.get("towers", {})
+	if typeof(towers_variant) != TYPE_DICTIONARY:
+		return occupied
+
+	var tower_data := towers_variant as Dictionary
+	var placements_variant: Variant = tower_data.get("placements", [])
+	if typeof(placements_variant) != TYPE_ARRAY:
+		return occupied
+
+	for placement_variant: Variant in placements_variant:
+		if typeof(placement_variant) != TYPE_DICTIONARY:
+			continue
+		var placement := placement_variant as Dictionary
+		occupied.append({
+			"x": _dict_int(placement, "x", 0),
+			"z": _dict_int(placement, "z", 0),
+		})
+
+	return occupied
 
 func _catalog_array(key: String) -> Array:
 	var section_variant: Variant = _scenario.get(key, {})

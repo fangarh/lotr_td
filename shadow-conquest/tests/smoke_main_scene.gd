@@ -90,6 +90,8 @@ func _validate_catalog_shape(data: Dictionary, failures: Array[String]) -> void:
 			failures.append("Spike scenario towers.catalog must be an array")
 		if typeof(towers.get("placements", [])) != TYPE_ARRAY:
 			failures.append("Spike scenario towers.placements must be an array")
+		if typeof(towers.get("buildSpots", [])) != TYPE_ARRAY:
+			failures.append("Spike scenario towers.buildSpots must be an array")
 
 	var enemies: Variant = data.get("enemies", {})
 	if typeof(enemies) != TYPE_DICTIONARY:
@@ -125,6 +127,10 @@ func _validate_catalog_shape(data: Dictionary, failures: Array[String]) -> void:
 		var game_state_data := game_state as Dictionary
 		if int(game_state_data.get("baseLives", 0)) < 1:
 			failures.append("Spike scenario gameState.baseLives must be at least 1")
+		if not game_state_data.has("startingGold") or int(game_state_data.get("startingGold", -1)) < 0:
+			failures.append("Spike scenario gameState.startingGold must be zero or above")
+
+	_validate_build_contract_shape(data, "Spike scenario", failures)
 
 func _validate_mvp_scenario_index(failures: Array[String]) -> void:
 	if not FileAccess.file_exists(SCENARIO_INDEX_PATH):
@@ -160,8 +166,71 @@ func _validate_mvp_scenario_index(failures: Array[String]) -> void:
 			failures.append("MVP scenario index entry %s must include name" % id)
 		if path == "" or not FileAccess.file_exists(path):
 			failures.append("MVP scenario index entry %s must point to an existing file" % id)
+		elif id == "mvp-map-1" or id == "mvp-map-2":
+			_validate_mvp_scenario_data(path, id, failures)
 
 	if not ids.has("mvp-map-1"):
 		failures.append("MVP scenario index must include mvp-map-1")
 	if not ids.has("mvp-map-2"):
 		failures.append("MVP scenario index must include mvp-map-2")
+
+func _validate_mvp_scenario_data(path: String, scenario_id: String, failures: Array[String]) -> void:
+	var file := FileAccess.open(path, FileAccess.READ)
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		failures.append("MVP scenario %s must be a JSON object" % scenario_id)
+		return
+
+	var data := parsed as Dictionary
+	_validate_build_contract_shape(data, "MVP scenario %s" % scenario_id, failures)
+
+func _validate_build_contract_shape(data: Dictionary, label: String, failures: Array[String]) -> void:
+	var game_state: Variant = data.get("gameState", {})
+	if typeof(game_state) != TYPE_DICTIONARY:
+		failures.append("%s gameState must be an object" % label)
+	else:
+		var game_state_data := game_state as Dictionary
+		if not game_state_data.has("startingGold") or int(game_state_data.get("startingGold", -1)) < 0:
+			failures.append("%s gameState.startingGold must be zero or above" % label)
+
+	var towers: Variant = data.get("towers", {})
+	if typeof(towers) != TYPE_DICTIONARY:
+		failures.append("%s towers must be an object" % label)
+		return
+
+	var tower_data := towers as Dictionary
+	var catalog_variant: Variant = tower_data.get("catalog", [])
+	if typeof(catalog_variant) != TYPE_ARRAY:
+		failures.append("%s towers.catalog must be an array" % label)
+	else:
+		var catalog := catalog_variant as Array
+		if catalog.is_empty():
+			failures.append("%s towers.catalog must include buildable tower entries" % label)
+		for tower_variant: Variant in catalog:
+			if typeof(tower_variant) != TYPE_DICTIONARY:
+				failures.append("%s towers.catalog entries must be objects" % label)
+				continue
+			var tower := tower_variant as Dictionary
+			var tower_id := str(tower.get("id", ""))
+			if tower_id == "":
+				failures.append("%s tower catalog entries must include id" % label)
+			if not tower.has("cost") or int(tower.get("cost", -1)) < 0:
+				failures.append("%s tower %s must include cost zero or above" % [label, tower_id])
+
+	var build_spots_variant: Variant = tower_data.get("buildSpots", [])
+	if typeof(build_spots_variant) != TYPE_ARRAY:
+		failures.append("%s towers.buildSpots must be an array" % label)
+		return
+
+	var build_spots := build_spots_variant as Array
+	if build_spots.is_empty():
+		failures.append("%s towers.buildSpots must include authored spots" % label)
+	for spot_variant: Variant in build_spots:
+		if typeof(spot_variant) != TYPE_DICTIONARY:
+			failures.append("%s build spot entries must be objects" % label)
+			continue
+		var spot := spot_variant as Dictionary
+		if str(spot.get("id", "")) == "":
+			failures.append("%s build spot entries must include id" % label)
+		if not spot.has("x") or not spot.has("z"):
+			failures.append("%s build spot %s must include x and z" % [label, str(spot.get("id", ""))])
