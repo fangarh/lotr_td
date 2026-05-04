@@ -124,10 +124,13 @@ func _validate_successful_build_mutates_state(build_state: Node, failures: Array
 func _validate_refusals_do_not_mutate_state(build_state: Node, failures: Array[String]) -> void:
 	build_state.call("configure", [
 		{"id": "spot-a", "x": 0, "z": 0, "allowedTypeIds": ["eye"]},
+		{"id": "spot-occupied", "x": 1, "z": 0},
 	], {
 		"eye": {"id": "eye", "name": "Eye", "cost": 80},
 		"forge": {"id": "forge", "name": "Forge", "cost": 20},
-	}, 50)
+	}, 50, [
+		{"x": 1, "z": 0},
+	])
 
 	var initial_gold := int(build_state.call("get_gold"))
 	var initial_available := (build_state.call("get_available_build_spots") as Array).size()
@@ -142,16 +145,29 @@ func _validate_refusals_do_not_mutate_state(build_state: Node, failures: Array[S
 	var unknown_spot := build_state.call("build_at", "missing-spot", "forge") as Dictionary
 	if bool(unknown_spot.get("ok", true)):
 		failures.append("Unknown spot build must fail")
+	if str(unknown_spot.get("reason", "")) != "unknown_spot":
+		failures.append("Unknown spot build must return reason=unknown_spot")
 	_expect_unchanged(build_state, initial_gold, initial_available, "unknown spot refusal", failures)
 
 	var unknown_tower := build_state.call("build_at", "spot-a", "missing-tower") as Dictionary
 	if bool(unknown_tower.get("ok", true)):
 		failures.append("Unknown tower build must fail")
+	if str(unknown_tower.get("reason", "")) != "unknown_tower":
+		failures.append("Unknown tower build must return reason=unknown_tower")
 	_expect_unchanged(build_state, initial_gold, initial_available, "unknown tower refusal", failures)
+
+	var occupied := build_state.call("build_at", "spot-occupied", "forge") as Dictionary
+	if bool(occupied.get("ok", true)):
+		failures.append("Occupied spot build must fail")
+	if str(occupied.get("reason", "")) != "occupied":
+		failures.append("Occupied spot build must return reason=occupied")
+	_expect_unchanged(build_state, initial_gold, initial_available, "occupied spot refusal", failures)
 
 	var disallowed := build_state.call("build_at", "spot-a", "forge") as Dictionary
 	if bool(disallowed.get("ok", true)):
 		failures.append("Disallowed tower build must fail")
+	if str(disallowed.get("reason", "")) != "type_not_allowed":
+		failures.append("Disallowed tower build must return reason=type_not_allowed")
 	_expect_unchanged(build_state, initial_gold, initial_available, "disallowed tower refusal", failures)
 
 func _validate_defensive_outputs(build_state: Node, failures: Array[String]) -> void:
