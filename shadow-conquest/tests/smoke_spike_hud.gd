@@ -16,6 +16,7 @@ func _init() -> void:
 	_validate_main_hud_state_readout(failures)
 	_validate_main_hud_action_wiring(failures)
 	_validate_hud_scenario_selector(failures)
+	_validate_hud_build_controls(failures)
 	_validate_mobile_hud_layout(failures)
 	_validate_mobile_capture_orientation(failures)
 	_validate_terminal_action_capture_contract(failures)
@@ -46,7 +47,10 @@ func _validate_main_hud_boundary(failures: Array[String]) -> void:
 		for method_name in ["bind_adapters", "bind_scenarios", "refresh", "debug_text", "active_scenario_id"]:
 			if not hud.has_method(method_name):
 				failures.append("Spike HUD must expose %s()" % method_name)
-		for signal_name in ["next_wave_requested", "restart_requested", "scenario_selected"]:
+		for method_name in ["bind_build_state", "active_build_spot_id", "active_tower_type_id"]:
+			if not hud.has_method(method_name):
+				failures.append("Spike HUD must expose %s()" % method_name)
+		for signal_name in ["next_wave_requested", "restart_requested", "scenario_selected", "build_requested"]:
 			if not hud.has_signal(signal_name):
 				failures.append("Spike HUD must expose %s signal" % signal_name)
 	main.free()
@@ -239,6 +243,102 @@ func _validate_hud_scenario_selector(failures: Array[String]) -> void:
 		hud.call("_layout_hud_bar_for_width", 390.0)
 		if selector.visible:
 			failures.append("HUD ScenarioSelect must stay hidden in narrow HUD layout")
+
+	hud.free()
+
+func _validate_hud_build_controls(failures: Array[String]) -> void:
+	var hud_script := load(HUD_SCRIPT_PATH) as Script
+	if hud_script == null:
+		return
+
+	var hud := Control.new()
+	hud.set_script(hud_script)
+	get_root().add_child(hud)
+	hud.call("_ready")
+
+	var start_failure_count := failures.size()
+	for method_name in ["bind_build_state", "active_build_spot_id", "active_tower_type_id"]:
+		if not hud.has_method(method_name):
+			failures.append("HUD build controls require %s()" % method_name)
+	for signal_name in ["build_requested"]:
+		if not hud.has_signal(signal_name):
+			failures.append("HUD build controls require %s signal" % signal_name)
+	if failures.size() > start_failure_count:
+		hud.free()
+		return
+
+	var build_spots: Array = [
+		{
+			"id": "fixture-open-spot",
+			"x": 4,
+			"z": 2,
+		},
+		{
+			"id": "fixture-second-spot",
+			"x": 5,
+			"z": 2,
+		},
+	]
+	var tower_options: Array = [
+		{
+			"id": "fixture-eye",
+			"name": "Fixture Eye",
+			"cost": 40,
+		},
+		{
+			"id": "fixture-spire",
+			"name": "Fixture Spire",
+			"cost": 70,
+		},
+	]
+	hud.call("bind_build_state", 100, build_spots, tower_options)
+
+	var spot_select := hud.get_node_or_null("HudBar/BuildSpotSelect") as OptionButton
+	var tower_select := hud.get_node_or_null("HudBar/TowerTypeSelect") as OptionButton
+	var gold_value := hud.get_node_or_null("HudBar/GoldValue") as Label
+	var build_button := hud.get_node_or_null("HudBar/BuildButton") as Button
+	if spot_select == null:
+		failures.append("HUD must create BuildSpotSelect OptionButton")
+	if tower_select == null:
+		failures.append("HUD must create TowerTypeSelect OptionButton")
+	if gold_value == null:
+		failures.append("HUD must create GoldValue Label")
+	if build_button == null:
+		failures.append("HUD must create BuildButton")
+	if spot_select == null or tower_select == null or gold_value == null or build_button == null:
+		hud.free()
+		return
+
+	if gold_value.text != "100":
+		failures.append("HUD GoldValue must show current build gold")
+	if spot_select.item_count != 2:
+		failures.append("HUD BuildSpotSelect must show available build spots")
+	if tower_select.item_count != 2:
+		failures.append("HUD TowerTypeSelect must show tower build options")
+	if spot_select.get_item_text(0) != "fixture-open-spot":
+		failures.append("HUD BuildSpotSelect must use spot ids for MVP labels")
+	if tower_select.get_item_text(0) != "Fixture Eye (40)":
+		failures.append("HUD TowerTypeSelect must show tower name and cost")
+	if str(hud.call("active_build_spot_id")) != "fixture-open-spot":
+		failures.append("HUD must track active build spot id")
+	if str(hud.call("active_tower_type_id")) != "fixture-eye":
+		failures.append("HUD must track active tower type id")
+
+	var requested: Array[String] = []
+	hud.connect("build_requested", func(spot_id: String, tower_type_id: String) -> void:
+		requested.append("%s|%s" % [spot_id, tower_type_id])
+	)
+	spot_select.select(1)
+	spot_select.emit_signal("item_selected", 1)
+	tower_select.select(1)
+	tower_select.emit_signal("item_selected", 1)
+	build_button.emit_signal("pressed")
+	if requested.size() != 1 or requested[0] != "fixture-second-spot|fixture-spire":
+		failures.append("HUD BuildButton must emit selected spot and tower ids")
+
+	hud.call("_layout_hud_bar_for_width", 390.0)
+	if spot_select.visible or tower_select.visible or gold_value.visible or build_button.visible:
+		failures.append("HUD build controls must hide in narrow HUD layout")
 
 	hud.free()
 

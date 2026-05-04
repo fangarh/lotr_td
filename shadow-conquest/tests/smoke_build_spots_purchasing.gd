@@ -24,6 +24,8 @@ func _init() -> void:
 			_validate_scenario_switch_reset(main, failures)
 
 		main.free()
+		if failures.is_empty():
+			_validate_hud_purchase_flow(failures)
 
 	if failures.is_empty():
 		print("smoke_build_spots_purchasing: ok")
@@ -140,3 +142,63 @@ func _validate_scenario_switch_reset(main: Node, failures: Array[String]) -> voi
 		failures.append("Unaffordable purchase must not register a tower")
 	if int(main.call("get_build_gold")) != gold:
 		failures.append("Unaffordable purchase must not spend gold")
+
+func _validate_hud_purchase_flow(failures: Array[String]) -> void:
+	var packed_main := load(MAIN_SCENE_PATH) as PackedScene
+	var main := packed_main.instantiate() as Node
+	main.set("scenario_index_path", FIXTURE_INDEX_PATH)
+	get_root().add_child(main)
+	main.call("_ready")
+
+	var hud := main.get_node_or_null("HUD")
+	var tower_root := main.get_node_or_null("World/Towers")
+	if hud == null:
+		failures.append("HUD purchase flow requires HUD")
+		main.free()
+		return
+	if tower_root == null:
+		failures.append("HUD purchase flow requires World/Towers")
+		main.free()
+		return
+	var start_failure_count := failures.size()
+	for method_name in ["bind_build_state", "active_build_spot_id", "active_tower_type_id"]:
+		if not hud.has_method(method_name):
+			failures.append("HUD purchase flow requires HUD.%s()" % method_name)
+	if not hud.has_signal("build_requested"):
+		failures.append("HUD purchase flow requires build_requested signal")
+	if failures.size() > start_failure_count:
+		main.free()
+		return
+
+	var start_gold := int(main.call("get_build_gold"))
+	var start_spots := main.call("get_available_build_spots") as Array
+	var start_tower_count := tower_root.get_child_count()
+	var spot_select := hud.get_node_or_null("HudBar/BuildSpotSelect") as OptionButton
+	var tower_select := hud.get_node_or_null("HudBar/TowerTypeSelect") as OptionButton
+	var gold_value := hud.get_node_or_null("HudBar/GoldValue") as Label
+	var build_button := hud.get_node_or_null("HudBar/BuildButton") as Button
+	if spot_select == null or tower_select == null or gold_value == null or build_button == null:
+		failures.append("HUD purchase flow requires build controls under HudBar")
+		main.free()
+		return
+
+	if gold_value.text != str(start_gold):
+		failures.append("HUD GoldValue must be bound during Main._ready")
+	if str(hud.call("active_build_spot_id")) != "fixture-open-spot":
+		failures.append("HUD must select the available fixture build spot after Main._ready")
+	if str(hud.call("active_tower_type_id")) != "fixture-eye":
+		failures.append("HUD must select the first fixture tower option after Main._ready")
+
+	build_button.emit_signal("pressed")
+	if tower_root.get_child_count() != start_tower_count + 1:
+		failures.append("HUD BuildButton must purchase and spawn a tower through Main")
+	if int(main.call("get_build_gold")) != start_gold - 40:
+		failures.append("HUD build purchase must refresh Main build gold")
+	if (main.call("get_available_build_spots") as Array).size() != start_spots.size() - 1:
+		failures.append("HUD build purchase must remove the used spot from available spots")
+	if gold_value.text != str(start_gold - 40):
+		failures.append("HUD GoldValue must refresh after HUD build attempt")
+	if spot_select.item_count != start_spots.size() - 1:
+		failures.append("HUD BuildSpotSelect must refresh after HUD build attempt")
+
+	main.free()

@@ -65,6 +65,7 @@ func load_scenario_by_id(scenario_id: String) -> bool:
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
 	hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
+	_bind_hud_build_state()
 	hud.call("refresh")
 	return true
 
@@ -79,6 +80,7 @@ func _ready() -> void:
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
 	hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
+	_bind_hud_build_state()
 	_bind_hud_action_signals()
 
 func _configure_scenario_catalog() -> void:
@@ -426,6 +428,7 @@ func restart_current_scenario_manually() -> bool:
 	_start_runtime_from_scenario()
 	hud.call("bind_adapters", game_state_adapter, wave_state_adapter, combat_adapter, _scenario_waves().size())
 	hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
+	_bind_hud_build_state()
 	return true
 
 func _bind_hud_action_signals() -> void:
@@ -441,6 +444,14 @@ func _bind_hud_action_signals() -> void:
 	if hud.has_signal("scenario_selected") and not hud.is_connected("scenario_selected", scenario_callback):
 		hud.connect("scenario_selected", scenario_callback)
 
+	var build_callback := Callable(self, "_on_hud_build_requested")
+	if hud.has_signal("build_requested") and not hud.is_connected("build_requested", build_callback):
+		hud.connect("build_requested", build_callback)
+
+func _bind_hud_build_state() -> void:
+	if hud != null and hud.has_method("bind_build_state"):
+		hud.call("bind_build_state", get_build_gold(), get_available_build_spots(), get_tower_build_options())
+
 func _on_hud_next_wave_requested() -> void:
 	if start_next_wave_manually():
 		hud.call("refresh")
@@ -452,7 +463,13 @@ func _on_hud_restart_requested() -> void:
 func _on_hud_scenario_selected(scenario_id: String) -> void:
 	if load_scenario_by_id(scenario_id):
 		hud.call("bind_scenarios", available_scenarios(), _active_scenario_id)
+		_bind_hud_build_state()
 		hud.call("refresh")
+
+func _on_hud_build_requested(spot_id: String, tower_type_id: String) -> void:
+	build_tower_at_spot(spot_id, tower_type_id)
+	_bind_hud_build_state()
+	hud.call("refresh")
 
 func _start_active_wave_state(active_wave_id: String, waves: Array) -> void:
 	wave_state_adapter.call("start_wave", active_wave_id, _expected_spawn_count_for_wave(waves, active_wave_id))

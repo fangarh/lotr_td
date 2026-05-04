@@ -4,6 +4,7 @@ class_name SpikeHud
 signal next_wave_requested
 signal restart_requested
 signal scenario_selected(scenario_id: String)
+signal build_requested(spot_id: String, tower_type_id: String)
 
 var _game_state_adapter: Node = null
 var _wave_state_adapter: Node = null
@@ -19,6 +20,15 @@ var _scenario_entries: Array = []
 var _active_scenario_id := ""
 var _scenario_select: OptionButton = null
 var _action_button: Button = null
+var _build_gold := 0
+var _build_spot_entries: Array = []
+var _tower_option_entries: Array = []
+var _active_build_spot_id := ""
+var _active_tower_type_id := ""
+var _build_spot_select: OptionButton = null
+var _tower_type_select: OptionButton = null
+var _gold_value_label: Label = null
+var _build_button: Button = null
 var _cached_text := ""
 
 func _ready() -> void:
@@ -56,6 +66,22 @@ func bind_scenarios(entries: Array, active_scenario_id: String) -> void:
 func active_scenario_id() -> String:
 	return _active_scenario_id
 
+func bind_build_state(gold: int, build_spots: Array, tower_options: Array) -> void:
+	_build_gold = maxi(gold, 0)
+	_build_spot_entries = _copy_dictionary_entries(build_spots)
+	_tower_option_entries = _copy_dictionary_entries(tower_options)
+	_ensure_nodes()
+	_rebuild_build_spot_select()
+	_rebuild_tower_type_select()
+	_update_build_controls()
+	_layout_hud_bar()
+
+func active_build_spot_id() -> String:
+	return _active_build_spot_id
+
+func active_tower_type_id() -> String:
+	return _active_tower_type_id
+
 func refresh() -> void:
 	_ensure_nodes()
 	_cached_text = _build_debug_text()
@@ -89,6 +115,7 @@ func _ensure_nodes() -> void:
 	_enemies_value_label = _ensure_value_label(_enemies_value_label, "EnemiesValue")
 	_ensure_scenario_select()
 	_ensure_action_button()
+	_ensure_build_controls()
 	_layout_hud_bar()
 
 func _ensure_value_label(label: Label, label_name: String) -> Label:
@@ -174,6 +201,68 @@ func _ensure_action_button() -> void:
 	if not _action_button.is_connected("pressed", pressed_callback):
 		_action_button.connect("pressed", pressed_callback)
 
+func _ensure_build_controls() -> void:
+	if _build_spot_select == null:
+		_build_spot_select = _hud_bar.get_node_or_null("BuildSpotSelect") as OptionButton
+	if _build_spot_select == null:
+		_build_spot_select = OptionButton.new()
+		_build_spot_select.name = "BuildSpotSelect"
+		_build_spot_select.mouse_filter = Control.MOUSE_FILTER_STOP
+		_build_spot_select.focus_mode = Control.FOCUS_NONE
+		_build_spot_select.add_theme_font_size_override("font_size", 13)
+		_hud_bar.add_child(_build_spot_select)
+
+	var spot_callback := Callable(self, "_on_build_spot_item_selected")
+	if not _build_spot_select.is_connected("item_selected", spot_callback):
+		_build_spot_select.connect("item_selected", spot_callback)
+
+	if _tower_type_select == null:
+		_tower_type_select = _hud_bar.get_node_or_null("TowerTypeSelect") as OptionButton
+	if _tower_type_select == null:
+		_tower_type_select = OptionButton.new()
+		_tower_type_select.name = "TowerTypeSelect"
+		_tower_type_select.mouse_filter = Control.MOUSE_FILTER_STOP
+		_tower_type_select.focus_mode = Control.FOCUS_NONE
+		_tower_type_select.add_theme_font_size_override("font_size", 13)
+		_hud_bar.add_child(_tower_type_select)
+
+	var tower_callback := Callable(self, "_on_tower_type_item_selected")
+	if not _tower_type_select.is_connected("item_selected", tower_callback):
+		_tower_type_select.connect("item_selected", tower_callback)
+
+	if _gold_value_label == null:
+		_gold_value_label = _hud_bar.get_node_or_null("GoldValue") as Label
+	if _gold_value_label == null:
+		_gold_value_label = Label.new()
+		_gold_value_label.name = "GoldValue"
+		_gold_value_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_gold_value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_gold_value_label.clip_text = true
+		_gold_value_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		_gold_value_label.add_theme_font_size_override("font_size", 15)
+		_gold_value_label.add_theme_color_override("font_color", Color(0.96, 0.9, 0.74, 1.0))
+		_hud_bar.add_child(_gold_value_label)
+
+	if _build_button == null:
+		_build_button = _hud_bar.get_node_or_null("BuildButton") as Button
+	if _build_button == null:
+		_build_button = Button.new()
+		_build_button.name = "BuildButton"
+		_build_button.text = "Build"
+		_build_button.mouse_filter = Control.MOUSE_FILTER_STOP
+		_build_button.focus_mode = Control.FOCUS_NONE
+		_build_button.add_theme_font_size_override("font_size", 14)
+		_build_button.add_theme_color_override("font_color", Color(0.98, 0.9, 0.72, 1.0))
+		_hud_bar.add_child(_build_button)
+
+	var pressed_callback := Callable(self, "_on_build_button_pressed")
+	if not _build_button.is_connected("pressed", pressed_callback):
+		_build_button.connect("pressed", pressed_callback)
+
+	_rebuild_build_spot_select()
+	_rebuild_tower_type_select()
+	_update_build_controls()
+
 func _layout_hud_bar() -> void:
 	if _hud_bar == null:
 		return
@@ -192,7 +281,7 @@ func _layout_hud_bar_for_width(viewport_width: float) -> void:
 		_layout_mobile_hud_bar(bar_width)
 		return
 
-	_hud_bar.offset_bottom = 64.0
+	_hud_bar.offset_bottom = 96.0
 	offset_bottom = offset_top + _hud_bar.offset_bottom
 	var gap := 8.0
 	var padding := 10.0
@@ -209,6 +298,7 @@ func _layout_hud_bar_for_width(viewport_width: float) -> void:
 		_layout_field(label_name, x, cell_width, 8.0, 25.0, 28.0)
 		x += cell_width + gap
 	_layout_action_button(bar_width - padding - action_width, 17.0, action_width, 30.0)
+	_layout_build_controls(bar_width, padding, gap)
 
 func _layout_mobile_hud_bar(bar_width: float) -> void:
 	_hud_bar.offset_bottom = 92.0
@@ -231,6 +321,7 @@ func _layout_mobile_hud_bar(bar_width: float) -> void:
 	_layout_field("Breaches", padding + row_two_cell_width + gap, row_two_cell_width, 49.0, 64.0, 24.0)
 	_layout_field("Enemies", padding + (row_two_cell_width + gap) * 2.0, row_two_cell_width, 49.0, 64.0, 24.0)
 	_layout_action_button(bar_width - padding - action_width, 58.0, action_width, 26.0)
+	_set_build_controls_visible(false)
 
 func _layout_field(field_name: String, x: float, field_width: float, caption_y: float, value_y: float, value_height: float) -> void:
 	var caption := _hud_bar.get_node_or_null("%sLabel" % field_name) as Label
@@ -247,6 +338,41 @@ func _layout_action_button(x: float, y: float, width: float, height: float) -> v
 		return
 	_action_button.position = Vector2(x, y)
 	_action_button.size = Vector2(width, height)
+
+func _layout_build_controls(bar_width: float, padding: float, gap: float) -> void:
+	var has_build_state := _build_gold > 0 or not _build_spot_entries.is_empty() or not _tower_option_entries.is_empty()
+	_set_build_controls_visible(has_build_state)
+	if not has_build_state:
+		return
+
+	var gold_width := 76.0
+	var button_width := 96.0
+	var available_width := maxf(bar_width - padding * 2.0 - gap * 3.0 - gold_width - button_width, 240.0)
+	var spot_width := maxf(available_width * 0.44, 112.0)
+	var tower_width := maxf(available_width - spot_width, 128.0)
+	var y := 58.0
+	var height := 28.0
+	var x := padding
+
+	if _gold_value_label != null:
+		_gold_value_label.position = Vector2(x, y)
+		_gold_value_label.size = Vector2(gold_width, height)
+	x += gold_width + gap
+	if _build_spot_select != null:
+		_build_spot_select.position = Vector2(x, y)
+		_build_spot_select.size = Vector2(spot_width, height)
+	x += spot_width + gap
+	if _tower_type_select != null:
+		_tower_type_select.position = Vector2(x, y)
+		_tower_type_select.size = Vector2(tower_width, height)
+	if _build_button != null:
+		_build_button.position = Vector2(bar_width - padding - button_width, y)
+		_build_button.size = Vector2(button_width, height)
+
+func _set_build_controls_visible(is_visible: bool) -> void:
+	for control in [_build_spot_select, _tower_type_select, _gold_value_label, _build_button]:
+		if control != null:
+			control.visible = is_visible
 
 func _update_hud_values() -> void:
 	if _state_value_label != null:
@@ -312,6 +438,75 @@ func _update_action_button() -> void:
 	else:
 		_action_button.visible = false
 
+func _rebuild_build_spot_select() -> void:
+	if _build_spot_select == null:
+		return
+
+	var previous_id := _active_build_spot_id
+	_build_spot_select.clear()
+	var selected_index := -1
+	for index in range(_build_spot_entries.size()):
+		var spot := _build_spot_entries[index] as Dictionary
+		var spot_id := str(spot.get("id", ""))
+		if spot_id == "":
+			continue
+		_build_spot_select.add_item(spot_id, index)
+		var item_index := _build_spot_select.item_count - 1
+		_build_spot_select.set_item_metadata(item_index, spot_id)
+		if spot_id == previous_id:
+			selected_index = item_index
+
+	if _build_spot_select.item_count == 0:
+		_active_build_spot_id = ""
+		return
+
+	if selected_index < 0:
+		selected_index = 0
+	_build_spot_select.select(selected_index)
+	_active_build_spot_id = str(_build_spot_select.get_item_metadata(selected_index))
+
+func _rebuild_tower_type_select() -> void:
+	if _tower_type_select == null:
+		return
+
+	var previous_id := _active_tower_type_id
+	_tower_type_select.clear()
+	var selected_index := -1
+	for index in range(_tower_option_entries.size()):
+		var tower := _tower_option_entries[index] as Dictionary
+		var tower_id := str(tower.get("id", ""))
+		if tower_id == "":
+			continue
+		var tower_name := str(tower.get("name", tower_id))
+		var cost := maxi(int(tower.get("cost", 0)), 0)
+		_tower_type_select.add_item("%s (%d)" % [tower_name, cost], index)
+		var item_index := _tower_type_select.item_count - 1
+		_tower_type_select.set_item_metadata(item_index, tower_id)
+		if tower_id == previous_id:
+			selected_index = item_index
+
+	if _tower_type_select.item_count == 0:
+		_active_tower_type_id = ""
+		return
+
+	if selected_index < 0:
+		selected_index = 0
+	_tower_type_select.select(selected_index)
+	_active_tower_type_id = str(_tower_type_select.get_item_metadata(selected_index))
+
+func _update_build_controls() -> void:
+	if _gold_value_label != null:
+		_gold_value_label.text = str(_build_gold)
+	if _build_button != null:
+		_build_button.disabled = _active_build_spot_id == "" or _active_tower_type_id == ""
+
+func _copy_dictionary_entries(entries: Array) -> Array:
+	var copied: Array = []
+	for entry_variant: Variant in entries:
+		if typeof(entry_variant) == TYPE_DICTIONARY:
+			copied.append((entry_variant as Dictionary).duplicate(true))
+	return copied
+
 func _on_action_button_pressed() -> void:
 	var state := _game_state_value("get_state", "idle")
 	if state == "wave_clear":
@@ -328,3 +523,20 @@ func _on_scenario_select_item_selected(index: int) -> void:
 		return
 	_active_scenario_id = scenario_id
 	scenario_selected.emit(scenario_id)
+
+func _on_build_spot_item_selected(index: int) -> void:
+	if _build_spot_select == null or index < 0 or index >= _build_spot_select.item_count:
+		return
+	_active_build_spot_id = str(_build_spot_select.get_item_metadata(index))
+	_update_build_controls()
+
+func _on_tower_type_item_selected(index: int) -> void:
+	if _tower_type_select == null or index < 0 or index >= _tower_type_select.item_count:
+		return
+	_active_tower_type_id = str(_tower_type_select.get_item_metadata(index))
+	_update_build_controls()
+
+func _on_build_button_pressed() -> void:
+	if _active_build_spot_id == "" or _active_tower_type_id == "":
+		return
+	build_requested.emit(_active_build_spot_id, _active_tower_type_id)
