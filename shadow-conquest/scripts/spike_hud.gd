@@ -277,17 +277,19 @@ func _layout_hud_bar_for_width(viewport_width: float) -> void:
 		return
 
 	var bar_width := maxf(viewport_width - 32.0, 360.0)
-	if bar_width < 560.0:
+	var gap := 8.0
+	var padding := 10.0
+	var selector_width := 170.0
+	var action_width := 120.0
+	var minimum_cell_width := 72.0
+	var required_desktop_width := padding * 2.0 + selector_width + action_width + minimum_cell_width * 5.0 + gap * 6.0
+	if bar_width < required_desktop_width:
 		_layout_mobile_hud_bar(bar_width)
 		return
 
 	_hud_bar.offset_bottom = 96.0
 	offset_bottom = offset_top + _hud_bar.offset_bottom
-	var gap := 8.0
-	var padding := 10.0
-	var selector_width := 170.0
-	var action_width := 120.0
-	var cell_width := maxf((bar_width - padding * 2.0 - gap * 6.0 - selector_width - action_width) / 5.0, 72.0)
+	var cell_width := maxf((bar_width - padding * 2.0 - gap * 6.0 - selector_width - action_width) / 5.0, minimum_cell_width)
 	var x := padding
 	if _scenario_select != null:
 		_scenario_select.visible = not _scenario_entries.is_empty()

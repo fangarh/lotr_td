@@ -17,6 +17,7 @@ func _init() -> void:
 	_validate_main_hud_action_wiring(failures)
 	_validate_hud_scenario_selector(failures)
 	_validate_hud_build_controls(failures)
+	_validate_intermediate_hud_layout(failures)
 	_validate_mobile_hud_layout(failures)
 	_validate_mobile_capture_orientation(failures)
 	_validate_terminal_action_capture_contract(failures)
@@ -339,6 +340,79 @@ func _validate_hud_build_controls(failures: Array[String]) -> void:
 	hud.call("_layout_hud_bar_for_width", 390.0)
 	if spot_select.visible or tower_select.visible or gold_value.visible or build_button.visible:
 		failures.append("HUD build controls must hide in narrow HUD layout")
+
+	hud.free()
+
+func _validate_intermediate_hud_layout(failures: Array[String]) -> void:
+	var hud_script := load(HUD_SCRIPT_PATH) as Script
+	if hud_script == null:
+		return
+
+	var hud := Control.new()
+	hud.set_script(hud_script)
+	get_root().add_child(hud)
+	hud.call("_ready")
+	hud.call("bind_scenarios", [
+		{
+			"id": "fixture-map-1",
+			"name": "Fixture Map One",
+			"path": "res://tests/fixtures/two_wave_scenario.json",
+			"summary": ""
+		}
+	], "fixture-map-1")
+	hud.call("bind_build_state", 100, [
+		{
+			"id": "fixture-open-spot",
+			"x": 4,
+			"z": 2,
+		}
+	], [
+		{
+			"id": "fixture-eye",
+			"name": "Fixture Eye",
+			"cost": 40,
+		}
+	])
+
+	for viewport_width in [640.0, 720.0]:
+		hud.call("_layout_hud_bar_for_width", viewport_width)
+		var scenario_select := hud.get_node_or_null("HudBar/ScenarioSelect") as OptionButton
+		var build_spot_select := hud.get_node_or_null("HudBar/BuildSpotSelect") as OptionButton
+		var tower_type_select := hud.get_node_or_null("HudBar/TowerTypeSelect") as OptionButton
+		var gold_value := hud.get_node_or_null("HudBar/GoldValue") as Label
+		var build_button := hud.get_node_or_null("HudBar/BuildButton") as Button
+		if scenario_select != null and scenario_select.visible:
+			failures.append("HUD must use compact layout at viewport width %.0f to avoid ScenarioSelect overlap" % viewport_width)
+		if build_spot_select != null and build_spot_select.visible:
+			failures.append("HUD must hide BuildSpotSelect at compact viewport width %.0f" % viewport_width)
+		if tower_type_select != null and tower_type_select.visible:
+			failures.append("HUD must hide TowerTypeSelect at compact viewport width %.0f" % viewport_width)
+		if gold_value != null and gold_value.visible:
+			failures.append("HUD must hide GoldValue at compact viewport width %.0f" % viewport_width)
+		if build_button != null and build_button.visible:
+			failures.append("HUD must hide BuildButton at compact viewport width %.0f" % viewport_width)
+
+	var desktop_viewport_width := 960.0
+	var desktop_bar_width := desktop_viewport_width - 32.0
+	hud.call("_layout_hud_bar_for_width", desktop_viewport_width)
+	var enemies_value := hud.get_node_or_null("HudBar/EnemiesValue") as Label
+	var action_button := hud.get_node_or_null("HudBar/ActionButton") as Button
+	if enemies_value == null or action_button == null:
+		failures.append("Desktop HUD overlap regression requires EnemiesValue and ActionButton")
+		hud.free()
+		return
+
+	var gap := 8.0
+	if enemies_value.position.x + enemies_value.size.x > action_button.position.x - gap:
+		failures.append("Desktop HUD fields must leave a gap before ActionButton")
+
+	for node_path in ["HudBar/GoldValue", "HudBar/BuildSpotSelect", "HudBar/TowerTypeSelect", "HudBar/BuildButton"]:
+		var control := hud.get_node_or_null(node_path) as Control
+		if control == null:
+			failures.append("Desktop HUD build layout requires %s" % node_path)
+			continue
+		if control.visible and (control.position.x < 0.0 or control.position.x + control.size.x > desktop_bar_width):
+			failures.append("Desktop HUD build control %s must stay inside HudBar width" % node_path)
 
 	hud.free()
 
